@@ -19,6 +19,8 @@ $dca['config']['ptable'] = 'tl_calendar_events';
 // there are no sub-sub-events
 unset($dca['list']['operations']['subevents']);
 
+$dca['list']['operations']['edit']['href'] = 'do=calendar_subevents&table=tl_content';
+
 /**
  * Callbacks
  */
