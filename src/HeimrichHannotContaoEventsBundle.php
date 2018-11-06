@@ -8,16 +8,8 @@
 
 namespace HeimrichHannot\EventsBundle;
 
-use HeimrichHannot\EventsBundle\DependencyInjection\EventsExtension;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class HeimrichHannotContaoEventsBundle extends Bundle
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getContainerExtension()
-    {
-        return new EventsExtension();
-    }
 }

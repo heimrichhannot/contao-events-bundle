@@ -12,3 +12,6 @@ Install via composer: `composer require heimrichhannot/contao-events-bundle` and
 
 ## Configuration
 
+### About sub events
+
+The `tl_calendar_sub_event` dca is created by copying the dca of `tl_calendar_events` and resetting some callbacks. See `tl_calendar_sub_event.php` for more details on that.
