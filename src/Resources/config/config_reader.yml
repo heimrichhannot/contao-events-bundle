@@ -1,0 +1,4 @@
+huh:
+  reader:
+    items:
+    - { name: event_default, class: HeimrichHannot\EventsBundle\Item\DefaultReaderItem }

@@ -1,0 +1,43 @@
+<div class="event layout_teaser {{ cssClass }}" itemscope itemtype="http://schema.org/Event">
+    {% if hasDetails|default %}
+        <h2 itemprop="name">
+            <a href="{{ href }}"
+               title="{{ title }} ({% if day|default %}{{ day }}, {% endif %}{{ date }}{% if time|default %}, {{ time }}{% endif %})"{{ target }}
+               itemprop="url">
+                {{ link }}
+            </a>
+        </h2>
+    {% else %}
+        <h2 itemprop="name">
+            {{ title }}
+        </h2>
+    {% endif %}
+
+    <p class="time">
+        <time datetime="{{ datetime }}" itemprop="startDate">
+            {{ date }}{% if time|default %}, {{ time }}{% endif %}
+        </time>
+    </p>
+
+    <div class="ce_text block" itemprop="description">
+        {% if not addBefore|default %}
+            {{ teaser|raw }}
+        {% endif %}
+
+        {% if images.singleSRC|default() %}
+            {{ include('@HeimrichHannotContaoUtils/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
+        {% endif %}
+
+        {% if addBefore|default %}
+            {{ teaser|raw }}
+        {% endif %}
+    </div>
+
+    {% if hasDetails %}
+        <p class="more">
+            <a href="{{ href }}" title="{{ readMore }}"{{ target }} itemprop="url">
+                {{ more }}<span class="invisible"> {{ link }}</span>
+            </a>
+        </p>
+    {% endif %}
+</div>

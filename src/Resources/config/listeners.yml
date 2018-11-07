@@ -7,6 +7,11 @@ services:
       calls:
       - ["setContainer", ["@service_container"]]
 
+  huh.events.event_listener.data_container.calendar_events_listener:
+    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalenderEventsListener
+    public: true
+    autowire: true
+
   huh.events.event_listener.data_container.calendar_sub_events_listener:
     class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalenderSubEventsListener
     public: true

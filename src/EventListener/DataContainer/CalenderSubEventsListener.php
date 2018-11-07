@@ -182,6 +182,10 @@ class CalenderSubEventsListener implements FrameworkAwareInterface, ContainerAwa
      */
     public function loadTime($value)
     {
+        if ($this->container->get('huh.utils.container')->isFrontend()) {
+            return $value;
+        }
+
         return strtotime('1970-01-01 '.date('H:i:s', $value));
     }
 

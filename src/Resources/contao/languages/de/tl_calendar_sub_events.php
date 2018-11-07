@@ -24,15 +24,15 @@ $lang['publish_legend'] = 'Veröffentlichung';
 /**
  * Buttons
  */
-$lang['new'][0]    = 'Neue Unterveranstaltung';
-$lang['new'][1]    = 'Unterveranstaltung erstellen';
-$lang['edit'][0]   = 'Unterveranstaltung bearbeiten';
-$lang['edit'][1]   = 'Unterveranstaltung ID %s bearbeiten';
-$lang['copy'][0]   = 'Unterveranstaltung duplizieren';
-$lang['copy'][1]   = 'Unterveranstaltung ID %s duplizieren';
-$lang['delete'][0] = 'Unterveranstaltung löschen';
-$lang['delete'][1] = 'Unterveranstaltung ID %s löschen';
-$lang['toggle'][0] = 'Unterveranstaltung veröffentlichen';
-$lang['toggle'][1] = 'Unterveranstaltung ID %s veröffentlichen/verstecken';
-$lang['show'][0]   = 'Unterveranstaltung Details';
-$lang['show'][1]   = 'Unterveranstaltung-Details ID %s anzeigen';
+$lang['new'][0]       = 'Neue Unterveranstaltung';
+$lang['new'][1]       = 'Unterveranstaltung erstellen';
+$lang['edit'][0]      = 'Unterveranstaltung bearbeiten';
+$lang['edit'][1]      = 'Unterveranstaltung ID %s bearbeiten';
+$lang['copy'][0]      = 'Unterveranstaltung duplizieren';
+$lang['copy'][1]      = 'Unterveranstaltung ID %s duplizieren';
+$lang['delete'][0]    = 'Unterveranstaltung löschen';
+$lang['delete'][1]    = 'Unterveranstaltung ID %s löschen';
+$lang['toggle'][0]    = 'Unterveranstaltung veröffentlichen';
+$lang['toggle'][1]    = 'Unterveranstaltung ID %s veröffentlichen/verstecken';
+$lang['show'][0]      = 'Unterveranstaltung Details';
+$lang['show'][1]      = 'Unterveranstaltung-Details ID %s anzeigen';

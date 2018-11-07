@@ -1,0 +1,6 @@
+<div class="event layout_upcoming {{ cssClass }}" itemscope itemtype="http://schema.org/Event">
+  <time datetime="{{ datetime }}" class="date" itemprop="startDate">{{ date }}{% if time|default %}, {{ time }}{% endif %}</time>
+  <a href="{{ href }}" title="{{ title }} ({% if day|default %}{{ day }}, {% endif %}{{ date }}{% if time|default %}, {{ time }}{% endif %})"{{ target }} itemprop="url">
+    {{ link }}
+  </a>
+</div>
