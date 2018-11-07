@@ -21,6 +21,8 @@ unset($dca['list']['operations']['subevents']);
 
 $dca['list']['operations']['edit']['href']              = 'do=calendar_subevents&table=tl_content';
 $dca['list']['operations']['toggle']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'toggleIcon'];
+$dca['list']['operations']['feature']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'iconFeatured'];
+
 
 $dca['list']['sorting']['child_record_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'listEvents'];
 

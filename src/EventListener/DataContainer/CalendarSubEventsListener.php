@@ -26,10 +26,91 @@ use Contao\Versions;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
-class CalenderSubEventsListener implements FrameworkAwareInterface, ContainerAwareInterface
+class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwareInterface
 {
     use FrameworkAwareTrait;
     use ContainerAwareTrait;
+
+    /**
+     * Return the "feature/unfeature element" button.
+     *
+     * @param array  $row
+     * @param string $href
+     * @param string $label
+     * @param string $title
+     * @param string $icon
+     * @param string $attributes
+     *
+     * @return string
+     */
+    public function iconFeatured($row, $href, $label, $title, $icon, $attributes)
+    {
+        $user = BackendUser::getInstance();
+
+        if (\strlen(Input::get('fid'))) {
+            $this->toggleFeatured(Input::get('fid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
+            Controller::redirect(System::getReferer());
+        }
+
+        // Check permissions AFTER checking the fid, so hacking attempts are logged
+        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
+            return '';
+        }
+
+        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
+
+        if (!$row['featured']) {
+            $icon = 'featured_.svg';
+        }
+
+        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
+    }
+
+    /**
+     * Feature/unfeature a calendar event.
+     *
+     * @param int           $intId
+     * @param bool          $blnVisible
+     * @param DataContainer $dc
+     *
+     * @throws \Contao\CoreBundle\Exception\AccessDeniedException
+     */
+    public function toggleFeatured($intId, $blnVisible, DataContainer $dc = null)
+    {
+        $user = BackendUser::getInstance();
+        $db = Database::getInstance();
+
+        // Check permissions to edit
+        Input::setGet('id', $intId);
+        Input::setGet('act', 'feature');
+        $this->checkPermission();
+
+        // Check permissions to feature
+        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
+            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$intId.'.');
+        }
+
+        $objVersions = new Versions('tl_calendar_sub_events', $intId);
+        $objVersions->initialize();
+
+        // Trigger the save_callback
+        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'])) {
+            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'] as $callback) {
+                if (\is_array($callback)) {
+                    $obj = System::importStatic($callback[0]);
+                    $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
+                } elseif (\is_callable($callback)) {
+                    $blnVisible = $callback($blnVisible, $this);
+                }
+            }
+        }
+
+        // Update the database
+        $db->prepare('UPDATE tl_calendar_sub_events SET tstamp='.time().", featured='".($blnVisible ? 1 : '')."' WHERE id=?")
+            ->execute($intId);
+
+        $objVersions->create();
+    }
 
     /**
      * Check permissions to edit table tl_calendar_sub_events.
@@ -86,6 +167,7 @@ class CalenderSubEventsListener implements FrameworkAwareInterface, ContainerAwa
             case 'show':
             case 'delete':
             case 'toggle':
+            case 'feature':
                 $objCalendar = $db->prepare('SELECT pid FROM tl_calendar_sub_events WHERE id=?')
                     ->limit(1)
                     ->execute($id);

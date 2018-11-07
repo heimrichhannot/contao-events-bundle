@@ -8,11 +8,16 @@ services:
       - ["setContainer", ["@service_container"]]
 
   huh.events.event_listener.data_container.calendar_events_listener:
-    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalenderEventsListener
+    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener
     public: true
     autowire: true
 
   huh.events.event_listener.data_container.calendar_sub_events_listener:
-    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalenderSubEventsListener
+    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener
+    public: true
+    autowire: true
+
+  huh.events.event_listener.hook.hook_listener:
+    class: HeimrichHannot\EventsBundle\EventListener\Hook\HookListener
     public: true
     autowire: true
