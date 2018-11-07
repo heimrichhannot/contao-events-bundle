@@ -1,40 +1,41 @@
 <div class="event layout_full block {{ cssClass }}" itemscope itemtype="http://schema.org/Event">
-  <h1 itemprop="name">{{ title }}</h1>
-  <p class="info">
-    <time datetime="{{ datetime }}" itemprop="startDate">{{ date }}{% if time|default %}, {{ time }}{% endif %}</time>
-  </p>
+    <h1 itemprop="name">{{ title }}</h1>
+    <p class="info">
+        <time datetime="{{ datetime }}"
+              itemprop="startDate">{{ date }}{% if time|default %}, {{ time }}{% endif %}</time>
+    </p>
 
-  {% if hasDetails|default %}
-      {{ details|raw }}
-  {% else %}
-    <div class="ce_text block">
-        {% if not addBefore|default %}
-            {{ teaser|raw }}
-        {% endif %}
+    {% if hasDetails|default %}
+        {{ details|raw }}
+    {% else %}
+        <div class="ce_text block">
+            {% if not addBefore|default %}
+                {{ teaser|raw }}
+            {% endif %}
 
-        {% if images.singleSRC|default() %}
-            {{ include('@HeimrichHannotContaoUtils/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
-        {% endif %}
+            {% if images.singleSRC|default() %}
+                {{ include('@HeimrichHannotContaoUtils/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
+            {% endif %}
 
-        {% if addBefore|default %}
-            {{ teaser|raw }}
-        {% endif %}
-    </div>
-  {% endif %}
+            {% if addBefore|default %}
+                {{ teaser|raw }}
+            {% endif %}
+        </div>
+    {% endif %}
 
     {% if location|default %}
-      <p class="location">{{ locationLabel }}: {{ location }}</p>
+        <p class="location">{{ locationLabel }}: {{ location }}</p>
     {% endif %}
 
     {% if enclosure|default %}
-      <ul class="enclosure">
-        {% for enclosure in enclosures %}
-          <li class="download-element ext-{{ enclosure.extension }}">
-            <a href="{{ enclosure.href }}" title="{{ enclosure.title }}">
-                {{ enclosure.link }}<span class="size">({{ enclosure.filesize }})</span>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
+        <ul class="enclosure">
+            {% for enclosure in enclosures %}
+                <li class="download-element ext-{{ enclosure.extension }}">
+                    <a href="{{ enclosure.href }}" title="{{ enclosure.title }}">
+                        {{ enclosure.link }}<span class="size">({{ enclosure.filesize }})</span>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
     {% endif %}
 </div>
