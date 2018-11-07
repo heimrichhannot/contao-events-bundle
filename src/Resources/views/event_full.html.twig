@@ -1,43 +1,40 @@
+<div class="event layout_full block {{ cssClass }}" itemscope itemtype="http://schema.org/Event">
+  <h1 itemprop="name">{{ title }}</h1>
+  <p class="info">
+    <time datetime="{{ datetime }}" itemprop="startDate">{{ date }}{% if time|default %}, {{ time }}{% endif %}</time>
+  </p>
 
-<div class="event layout_full block<?= $this->class ?>" itemscope itemtype="http://schema.org/Event">
-
-  <h1 itemprop="name"><?= $this->title ?></h1>
-  <p class="info"><time datetime="<?= $this->datetime ?>" itemprop="startDate"><?= $this->date ?><?php if ($this->time): ?>, <?= $this->time ?><?php endif; ?></time></p>
-
-  <?php if ($this->recurring): ?>
-    <p class="recurring"><?= $this->recurring ?><?php if ($this->until) echo ' ' . $this->until; ?>.</p>
-  <?php endif; ?>
-
-  <?php if ($this->hasDetails): ?>
-    <?= $this->details ?>
-  <?php else: ?>
+  {% if hasDetails|default %}
+      {{ details|raw }}
+  {% else %}
     <div class="ce_text block">
-      <?php if (!$this->addBefore): ?>
-        <?= $this->teaser ?>
-      <?php endif; ?>
+        {% if not addBefore|default %}
+            {{ teaser|raw }}
+        {% endif %}
 
-      <?php if ($this->addImage): ?>
-        <?php $this->insert('image', $this->arrData); ?>
-      <?php endif; ?>
+        {% if images.singleSRC|default() %}
+            {{ include('@HeimrichHannotContaoUtils/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
+        {% endif %}
 
-      <?php if ($this->addBefore): ?>
-        <?= $this->teaser ?>
-      <?php endif; ?>
+        {% if addBefore|default %}
+            {{ teaser|raw }}
+        {% endif %}
     </div>
-  <?php endif; ?>
+  {% endif %}
 
-  <?php if ($this->location): ?>
-    <p class="location"><?= $this->locationLabel ?>: <?= $this->location ?></p>
-  <?php endif; ?>
+    {% if location|default %}
+      <p class="location">{{ locationLabel }}: {{ location }}</p>
+    {% endif %}
 
-  <?php if ($this->enclosure): ?>
-    <ul class="enclosure">
-      <?php foreach ($this->enclosure as $enclosure): ?>
-        <li class="download-element ext-<?= $enclosure['extension'] ?>">
-           <a href="<?= $enclosure['href'] ?>" title="<?= $enclosure['title'] ?>"><?= $enclosure['link'] ?> <span class="size">(<?= $enclosure['filesize'] ?>)</span></a>
-        </li>
-      <?php endforeach; ?>
-    </ul>
-  <?php endif; ?>
-
+    {% if enclosure|default %}
+      <ul class="enclosure">
+        {% for enclosure in enclosures %}
+          <li class="download-element ext-{{ enclosure.extension }}">
+            <a href="{{ enclosure.href }}" title="{{ enclosure.title }}">
+                {{ enclosure.link }}<span class="size">({{ enclosure.filesize }})</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 </div>

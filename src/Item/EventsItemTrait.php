@@ -377,7 +377,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getText(): string
+    public function getDetails(): string
     {
         $strText = '';
 
