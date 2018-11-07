@@ -46,6 +46,29 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     }
 
     /**
+     * Return the "subevents" button.
+     *
+     * @param array  $row
+     * @param string $href
+     * @param string $label
+     * @param string $title
+     * @param string $icon
+     * @param string $attributes
+     *
+     * @return string
+     */
+    public function iconSubEvents($row, $href, $label, $title, $icon, $attributes)
+    {
+        $subEvents = $this->container->get('huh.utils.model')->findModelInstancesBy('tl_calendar_sub_events', ['pid=?'], [$row['id']]);
+
+        $icon = 'bundles/heimrichhannotcontaoevents/img/icon-subevents'.(null !== $subEvents ? '-existing' : '').'.png';
+
+        $href .= '&id='.$row['id'];
+
+        return '<a href="'.Controller::addToUrl($href, true, ['id']).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+    }
+
+    /**
      * Return the "feature/unfeature element" button.
      *
      * @param array  $row

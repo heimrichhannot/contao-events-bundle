@@ -8,7 +8,7 @@ $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 $dca['list']['operations']['subevents'] = [
     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
     'href'  => 'table=tl_calendar_sub_events',
-    'icon'  => 'bundles/heimrichhannotcontaoevents/img/icon-subevents.png'
+    'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconSubEvents']
 ];
 
 System::getContainer()->get('huh.utils.array')->insertInArrayByName(
