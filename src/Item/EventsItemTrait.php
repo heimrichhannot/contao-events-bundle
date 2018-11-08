@@ -12,7 +12,6 @@ use Contao\CommentsModel;
 use Contao\Config;
 use Contao\ContentModel;
 use Contao\Controller;
-use Contao\Date;
 use Contao\ModuleLoader;
 use Contao\StringUtil;
 use Contao\System;
@@ -314,7 +313,7 @@ trait EventsItemTrait
 
         if ($this->getRawValue('addTime')) {
             if ($span > 0) {
-                $date = \Date::parse($objPage->datimFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->datimFormat, $end);
+                $date = \Date::parse($objPage->dateFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->dateFormat, $end);
             }
         }
 
