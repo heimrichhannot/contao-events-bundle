@@ -228,29 +228,6 @@ trait EventsItemTrait
     }
 
     /**
-     * Get date DateTime.
-     *
-     * @return string
-     */
-    public function getDatetime(): string
-    {
-        $start = $this->startTime;
-        $end = $this->endTime;
-
-        return $this->getRawValue('addTime') ? date('Y-m-d\TH:i:sP', $start) : date('Y-m-d', $end);
-    }
-
-    /**
-     * Get date timestamp.
-     *
-     * @return string
-     */
-    public function getTimestamp(): string
-    {
-        return $this->startTime;
-    }
-
-    /**
      * Get the author.
      *
      * @return null|string
@@ -293,6 +270,29 @@ trait EventsItemTrait
     }
 
     /**
+     * Get date timestamp.
+     *
+     * @return string
+     */
+    public function getTimestamp(): string
+    {
+        return $this->startTime;
+    }
+
+    /**
+     * Get date DateTime.
+     *
+     * @return string
+     */
+    public function getDatetime(): string
+    {
+        $start = $this->startTime;
+        $end = $this->endTime;
+
+        return $this->getRawValue('addTime') ? date('Y-m-d\TH:i:sP', $start) : date('Y-m-d', $end);
+    }
+
+    /**
      * Get formatted meta date.
      *
      * @return string
@@ -309,12 +309,6 @@ trait EventsItemTrait
 
         if ($span > 0) {
             $date = \Date::parse($objPage->dateFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->dateFormat, $end);
-        }
-
-        if ($this->getRawValue('addTime')) {
-            if ($span > 0) {
-                $date = \Date::parse($objPage->dateFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->dateFormat, $end);
-            }
         }
 
         return $date;
