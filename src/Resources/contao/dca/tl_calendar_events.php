@@ -2,14 +2,10 @@
 
 $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
-/**
- * Operations
- */
-$dca['list']['operations']['subevents'] = [
-    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
-    'href'  => 'table=tl_calendar_sub_events',
-    'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconSubEvents']
-];
+if (\Contao\Config::get('subEventMode') === \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY)
+{
+    System::getContainer()->get('huh.events.manager.events_manager')->initCalendarEventsDcaForSubEvents();
+}
 
 System::getContainer()->get('huh.utils.array')->insertInArrayByName(
     $dca['list']['operations'],
@@ -26,19 +22,6 @@ System::getContainer()->get('huh.utils.array')->insertInArrayByName(
 /**
  * Callbacks
  */
-$callbacks = [];
-
-foreach ($dca['config']['onload_callback'] as $callback) {
-    if ($callback[1] === 'checkPermission') {
-        $callbacks[] = ['huh.events.event_listener.data_container.calendar_events_listener', 'checkPermission'];
-        continue;
-    }
-
-    $callbacks[] = $callback;
-}
-
-$dca['config']['onload_callback'] = $callbacks;
-
 $dca['config']['onsubmit_callback'][] = ['huh.utils.dca', 'setDateAdded'];
 $dca['config']['oncopy_callback'][]   = ['huh.utils.dca', 'setDateAddedOnCopy'];
 
@@ -69,6 +52,3 @@ $fields = [
 ];
 
 $dca['fields'] += $fields;
-
-$dca['fields']['startTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];
-$dca['fields']['endTime']['load_callback']   = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];

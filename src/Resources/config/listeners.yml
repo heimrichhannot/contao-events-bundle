@@ -17,6 +17,11 @@ services:
     public: true
     autowire: true
 
+  huh.events.event_listener.data_container.content_listener:
+    class: HeimrichHannot\EventsBundle\EventListener\DataContainer\ContentListener
+    public: true
+    autowire: true
+
   huh.events.event_listener.hook.hook_listener:
     class: HeimrichHannot\EventsBundle\EventListener\Hook\HookListener
     public: true

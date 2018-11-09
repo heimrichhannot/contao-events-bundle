@@ -31,6 +31,9 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
     use FrameworkAwareTrait;
     use ContainerAwareTrait;
 
+    const SUB_EVENT_MODE_ENTITY = 'entity';
+    const SUB_EVENT_MODE_RELATION = 'relation';
+
     /**
      * Return the "feature/unfeature element" button.
      *

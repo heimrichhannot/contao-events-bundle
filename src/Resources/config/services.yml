@@ -1,1 +1,5 @@
 services:
+  huh.events.manager.events_manager:
+    class: HeimrichHannot\EventsBundle\Manager\EventsManager
+    public: true
+    autowire: true
