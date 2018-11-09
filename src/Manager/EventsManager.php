@@ -8,12 +8,15 @@
 
 namespace HeimrichHannot\EventsBundle\Manager;
 
+use Contao\Calendar;
 use Contao\Config;
 use Contao\Controller;
 use Contao\CoreBundle\Framework\FrameworkAwareInterface;
 use Contao\CoreBundle\Framework\FrameworkAwareTrait;
+use Contao\Date;
 use Contao\System;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
+use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
@@ -36,13 +39,6 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
                 'tables' => ['tl_calendar_sub_events', 'tl_content'],
             ];
-
-            /*
-             * Assets
-             */
-            if (System::getContainer()->get('huh.utils.container')->isBackend()) {
-                $GLOBALS['TL_CSS']['events-bundle'] = 'bundles/heimrichhannotcontaoevents/css/contao-events-bundle.be.min.css|static';
-            }
         }
     }
 
@@ -140,29 +136,51 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             /*
              * List
              */
-            $dca['list']['sorting']['child_record_callback'] = function ($arrRow) {
-                die('LLL');
+            // hide child elements
+            if (null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+                'tl_calendar_events', ['parentEvent = 0'], []))) {
+                foreach ($subEvents->fetchEach('id') as $id) {
+                    $dca['list']['sorting']['root'][] = $id;
+                }
+            }
 
-                $span = Calendar::calculateSpan($arrRow['startTime'], $arrRow['endTime']);
+            function getDate($row)
+            {
+                $span = Calendar::calculateSpan($row['startTime'], $row['endTime']);
 
                 if ($span > 0) {
-                    $date = Date::parse(Config::get(($arrRow['addTime'] ? 'datimFormat' : 'dateFormat')), $arrRow['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get(($arrRow['addTime'] ? 'datimFormat' : 'dateFormat')), $arrRow['endTime']);
-                } elseif ($arrRow['startTime'] == $arrRow['endTime']) {
-                    $date = Date::parse(Config::get('dateFormat'), $arrRow['startTime']).($arrRow['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $arrRow['startTime']) : '');
+                    $date = Date::parse(Config::get(($row['addTime'] ? 'datimFormat' : 'dateFormat')), $row['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get(($row['addTime'] ? 'datimFormat' : 'dateFormat')), $row['endTime']);
+                } elseif ($row['startTime'] == $row['endTime']) {
+                    $date = Date::parse(Config::get('dateFormat'), $row['startTime']).($row['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $row['startTime']) : '');
                 } else {
-                    $date = Date::parse(Config::get('dateFormat'), $arrRow['startTime']).($arrRow['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $arrRow['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get('timeFormat'), $arrRow['endTime']) : '');
+                    $date = Date::parse(Config::get('dateFormat'), $row['startTime']).($row['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $row['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get('timeFormat'), $row['endTime']) : '');
                 }
 
+                return $date;
+            }
+
+            $dca['list']['sorting']['child_record_callback'] = function ($row) {
                 // retrieve sub events
                 $subEvents = '';
 
                 /* @var CalendarEventsModel $adapter */
-                if (null !== ($adapter = $this->framework->getAdapter(CalendarEventsModel::class))) {
-                    if (null !== ($events = $adapter->getSubEvents($arrRow['id']))) {
+                if (null !== ($adapter = System::getContainer()->get('contao.framework')->getAdapter(CalendarEventsModel::class))) {
+                    if (null !== ($events = $adapter->getSubEvents($row['id']))) {
+                        while ($events->next()) {
+                            $subEventRow = $events->row();
+
+                            $subEvents .= System::getContainer()->get('twig')->render(
+                                '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
+                                    'row' => $subEventRow,
+                                    'date' => getdate($subEventRow),
+                                    'operations' => System::getContainer()->get('huh.utils.dca')->generateDcOperationsButtons($subEventRow, 'tl_calendar_events'),
+                                ]
+                            );
+                        }
                     }
                 }
 
-                return '<div class="tl_content_left">'.$arrRow['title'].' <span style="color:#999;padding-left:3px">['.$date.']</span></div>';
+                return '<div class="tl_content_left">'.$row['title'].' <span style="color:#999;padding-left:3px">['.getdate($row).']</span>'.$subEvents.'</div>';
             };
 
             /*

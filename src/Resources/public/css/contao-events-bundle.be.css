@@ -1,3 +1,9 @@
 #left #tl_navigation .calendar_subevents {
   display: none;
 }
+
+.tl_content_left .tl_content {
+  margin-left: 30px;
+  border-bottom: 0;
+  padding-right: 0;
+}
