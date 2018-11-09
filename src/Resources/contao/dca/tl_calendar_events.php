@@ -2,10 +2,7 @@
 
 $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
-if (\Contao\Config::get('subEventMode') === \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY)
-{
-    System::getContainer()->get('huh.events.manager.events_manager')->initCalendarEventsDcaForSubEvents();
-}
+System::getContainer()->get('huh.events.manager.events_manager')->initCalendarEventsDcaForSubEvents();
 
 System::getContainer()->get('huh.utils.array')->insertInArrayByName(
     $dca['list']['operations'],

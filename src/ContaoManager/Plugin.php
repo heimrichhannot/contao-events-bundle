@@ -27,12 +27,10 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
      */
     public function getBundles(ParserInterface $parser)
     {
-        return [
-            BundleConfig::create(HeimrichHannotContaoEventsBundle::class)->setLoadAfter([
-                ContaoCoreBundle::class,
-                ContaoCalendarBundle::class,
-            ]),
-        ];
+        return BundleConfig::create(HeimrichHannotContaoEventsBundle::class)->setLoadAfter([
+            ContaoCoreBundle::class,
+            ContaoCalendarBundle::class,
+        ]);
     }
 
     public function registerContainerConfiguration(LoaderInterface $loader, array $managerConfig)

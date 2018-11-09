@@ -9,6 +9,7 @@
 namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
 
 use Contao\BackendUser;
+use Contao\Calendar;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\AccessDeniedException;
 use Contao\CoreBundle\Framework\FrameworkAwareInterface;
@@ -21,6 +22,7 @@ use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
@@ -28,6 +30,20 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
 {
     use FrameworkAwareTrait;
     use ContainerAwareTrait;
+
+    public function checkForSubEvents(DataContainer $dc)
+    {
+        /* @var CalendarEventsModel $adapter */
+        if (null === ($adapter = $this->framework->getAdapter(CalendarEventsModel::class))) {
+            return;
+        }
+
+        if ($adapter->hasSubEvents($dc->id)) {
+            $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
+
+            unset($dca['fields']['parentEvent']);
+        }
+    }
 
     /**
      * Set the timestamp to 1970-01-01 (see #26).
