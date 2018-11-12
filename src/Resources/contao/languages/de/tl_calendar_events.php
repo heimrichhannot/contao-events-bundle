@@ -9,6 +9,8 @@ $lang['featured'][0]    = 'Event hervorheben';
 $lang['featured'][1]    = 'Das Event in einer Liste hervorgehobener Events anzeigen.';
 $lang['parentEvent'][0] = 'Elternveranstaltung';
 $lang['parentEvent'][1] = 'Wählen Sie hier eine übergeordnete Veranstaltung aus.';
+$lang['subTitle'][0]    = 'Untertitel';
+$lang['subTitle'][1]    = 'Geben Sie hier einen Untertitel ein.';
 
 /**
  * Buttons

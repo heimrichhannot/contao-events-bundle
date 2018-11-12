@@ -26,6 +26,7 @@ $dca['config']['oncopy_callback'][]   = ['huh.utils.dca', 'setDateAddedOnCopy'];
  * Palettes
  */
 $dca['palettes']['default'] = str_replace('noComments', 'noComments,featured', $dca['palettes']['default']);
+$dca['palettes']['default'] = str_replace('alias', 'alias,subTitle', $dca['palettes']['default']);
 
 /**
  * Fields
@@ -38,6 +39,14 @@ $fields = [
         'eval'    => ['rgxp' => 'datim', 'doNotCopy' => true, 'noSubmissionField' => true],
         'sql'     => "int(10) unsigned NOT NULL default '0'",
     ],
+    'subTitle' => [
+        'label'                   => &$GLOBALS['TL_LANG']['tl_calendar_events']['subTitle'],
+        'exclude'                 => true,
+        'search'                  => true,
+        'inputType'               => 'text',
+        'eval'                    => ['maxlength' => 255, 'tl_class' => 'w50'],
+        'sql'                     => "varchar(255) NOT NULL default ''"
+    ],
     'featured'  => [
         'label'     => &$GLOBALS['TL_LANG']['tl_calendar_events']['featured'],
         'exclude'   => true,
@@ -49,3 +58,7 @@ $fields = [
 ];
 
 $dca['fields'] += $fields;
+
+// avoid backend handling of timestamps for frontend
+$dca['fields']['startTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];
+$dca['fields']['endTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];

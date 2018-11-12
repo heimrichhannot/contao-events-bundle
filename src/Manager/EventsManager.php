@@ -126,12 +126,6 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             }
 
             $dca['config']['onload_callback'] = $callbacks;
-
-            /*
-             * Fields
-             */
-            $dca['fields']['startTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];
-            $dca['fields']['endTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_events_listener', 'loadTime']];
         } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
             /*
              * List
@@ -184,6 +178,21 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             };
 
             /*
+             * Operations
+             */
+            System::getContainer()->get('huh.utils.array')->insertInArrayByName(
+                $dca['list']['operations'],
+                'copy', [
+                'create_sub_event' => [
+                    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
+                    'icon' => 'new.svg',
+                    'href' => 'act=create&mode=2',
+                    'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconCreateSubEvent'],
+                ],
+            ], 1
+            );
+
+            /*
              * Callbacks
              */
             $dca['config']['onload_callback'][] = ['huh.events.event_listener.data_container.calendar_events_listener', 'checkForSubEvents'];
@@ -201,6 +210,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
                     'exclude' => true,
                     'filter' => true,
+                    'default' => \Input::get('parentEvent'),
                     'inputType' => 'select',
                     'options_callback' => function (\Contao\DataContainer $dc) {
                         $options = [];

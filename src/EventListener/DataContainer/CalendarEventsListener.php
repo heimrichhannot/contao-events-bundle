@@ -85,6 +85,30 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     }
 
     /**
+     * Return the "create sub event" button.
+     *
+     * @param array  $row
+     * @param string $href
+     * @param string $label
+     * @param string $title
+     * @param string $icon
+     * @param string $attributes
+     *
+     * @return string
+     */
+    public function iconCreateSubEvent($row, $href, $label, $title, $icon, $attributes)
+    {
+        /* @var CalendarEventsModel $adapter */
+        if ($row['parentEvent'] > 0) {
+            return '';
+        }
+
+        $href .= '&pid='.\Input::get('id').'&parentEvent='.$row['id'].'&rt='.\RequestToken::get();
+
+        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+    }
+
+    /**
      * Return the "feature/unfeature element" button.
      *
      * @param array  $row
