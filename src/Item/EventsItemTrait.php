@@ -41,6 +41,11 @@ trait EventsItemTrait
         return $this->title;
     }
 
+    public function getLocationLabel()
+    {
+        return $GLOBALS['TL_LANG']['MSC']['location'];
+    }
+
     /**
      * Compile the headline link.
      *
