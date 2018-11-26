@@ -131,7 +131,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              * List
              */
             // hide child elements
-            if (null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+            if ('calendar' === \Input::get('do') && null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
                 'tl_calendar_events', ['parentEvent = 0'], []))) {
                 foreach ($subEvents->fetchEach('id') as $id) {
                     $dca['list']['sorting']['root'][] = $id;
