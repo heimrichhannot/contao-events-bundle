@@ -15,6 +15,7 @@ use Contao\Controller;
 use Contao\ModuleLoader;
 use Contao\StringUtil;
 use Contao\System;
+use HeimrichHannot\ListBundle\Manager\ListManagerInterface;
 
 trait EventsItemTrait
 {
@@ -217,16 +218,20 @@ trait EventsItemTrait
             return self::$urlCache[$cacheKey];
         }
 
-        $modelUtil = System::getContainer()->get('huh.utils.model');
-
-        if (null === ($archive = $modelUtil->findModelInstanceByPk('tl_calendar', $this->pid))) {
-            return null;
-        }
-
-        if (null === ($page = $modelUtil->findModelInstanceByPk('tl_page', $archive->jumpTo))) {
-            self::$urlCache[$cacheKey] = ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
+        if ($this->getManager() instanceof ListManagerInterface && $this->getManager()->getListConfig()->addDetails) {
+            self::$urlCache[$cacheKey] = parent::getDetailsUrl();
         } else {
-            self::$urlCache[$cacheKey] = ampersand($page->getFrontendUrl((Config::get('useAutoItem') ? '/' : '/items/').($this->alias ?: $this->id)));
+            $modelUtil = System::getContainer()->get('huh.utils.model');
+
+            if (null === ($archive = $modelUtil->findModelInstanceByPk('tl_calendar', $this->pid))) {
+                return null;
+            }
+
+            if (null === ($page = $modelUtil->findModelInstanceByPk('tl_page', $archive->jumpTo))) {
+                self::$urlCache[$cacheKey] = ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
+            } else {
+                self::$urlCache[$cacheKey] = ampersand($page->getFrontendUrl((Config::get('useAutoItem') ? '/' : '/items/').($this->alias ?: $this->id)));
+            }
         }
 
         return self::$urlCache[$cacheKey] ?? null;
