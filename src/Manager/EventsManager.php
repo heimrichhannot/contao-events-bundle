@@ -229,7 +229,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                         return $options;
                     },
                     'eval' => ['tl_class' => 'w50', 'includeBlankOption' => true, 'chosen' => true],
-                    'sql' => "varchar(64) NOT NULL default ''",
+                    'sql' => "int(10) unsigned NOT NULL default '0'",
                 ],
             ];
 
