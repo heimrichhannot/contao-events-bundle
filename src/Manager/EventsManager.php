@@ -210,7 +210,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
                     'exclude' => true,
                     'filter' => true,
-                    'default' => \Input::get('parentEvent'),
+                    'default' => \Input::get('parentEvent') ?: 0,
                     'inputType' => 'select',
                     'options_callback' => function (\Contao\DataContainer $dc) {
                         $options = [];
