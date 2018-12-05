@@ -15,8 +15,10 @@ $lang['subTitle'][1]    = 'Geben Sie hier einen Untertitel ein.';
 /**
  * Buttons
  */
-$lang['subevents'][0] = 'Unterveranstaltungen anzeigen';
-$lang['subevents'][1] = 'Unterveranstaltungen für Event ID %s anzeigen';
+$lang['subevents'][0]        = 'Unterveranstaltungen anzeigen';
+$lang['subevents'][1]        = 'Unterveranstaltungen für Event ID %s anzeigen';
+$lang['create_sub_event'][0] = 'Unterveranstaltung anlegen';
+$lang['create_sub_event'][1] = 'Unterveranstaltung für Event ID %s anlegen';
 
 /**
  * Operations
