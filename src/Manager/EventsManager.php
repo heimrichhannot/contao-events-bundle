@@ -217,10 +217,10 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
 
                         // only allow events which are neither children nor parents
                         // at first, get all parent event ids
-                        $columns = ['id != ?', 'parentEvent = 0'];
+                        $columns = ['tl_calendar_events.id != ?', 'tl_calendar_events.parentEvent = 0'];
 
                         if (null !== ($events = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
-                                'tl_calendar_events', $columns, [$dc->id], ['order' => 'startTime DESC']))) {
+                                'tl_calendar_events', $columns, [$dc->id], ['order' => 'tl_calendar_events.startTime DESC']))) {
                             while ($events->next()) {
                                 $options[$events->id] = $events->title.' ('.date(\Contao\Config::get('dateFormat'), $events->startTime).', ID '.$events->id.')';
                             }
