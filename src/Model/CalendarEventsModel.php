@@ -37,10 +37,10 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
     {
         if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
             $table = 'tl_calendar_sub_events';
-            $parentProperty = 'pid';
+            $parentProperty = 'tl_calendar_events.pid';
         } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
             $table = 'tl_calendar_events';
-            $parentProperty = 'parentEvent';
+            $parentProperty = 'tl_calendar_events.parentEvent';
         } else {
             return null;
         }

@@ -13,6 +13,7 @@ use Contao\Config;
 use Contao\Controller;
 use Contao\CoreBundle\Framework\FrameworkAwareInterface;
 use Contao\CoreBundle\Framework\FrameworkAwareTrait;
+use Contao\DataContainer;
 use Contao\Date;
 use Contao\System;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
@@ -131,12 +132,14 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              * List
              */
             // hide child elements
-            if ('calendar' === \Input::get('do') && null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
-                'tl_calendar_events', ['parentEvent = 0'], []))) {
-                foreach ($subEvents->fetchEach('id') as $id) {
-                    $dca['list']['sorting']['root'][] = $id;
+            $dca['config']['onload_callback'][] = function (DataContainer $dc) {
+                if ('calendar' === \Input::get('do') && null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+                        'tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], []))) {
+                    foreach ($subEvents->fetchEach('id') as $id) {
+                        $dca['list']['sorting']['root'][] = $id;
+                    }
                 }
-            }
+            };
 
             function getDate($row)
             {
