@@ -132,7 +132,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              * List
              */
             // hide child elements
-            $dca['config']['onload_callback'][] = function (DataContainer $dc) {
+            $dca['config']['onload_callback'][] = function (DataContainer $dc) use (&$dca) {
                 if ('calendar' === \Input::get('do') && null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
                         'tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], []))) {
                     foreach ($subEvents->fetchEach('id') as $id) {
