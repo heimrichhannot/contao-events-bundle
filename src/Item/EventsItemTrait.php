@@ -338,6 +338,12 @@ trait EventsItemTrait
 
         $time = '';
 
+        $span = \Calendar::calculateSpan($start, $end);
+
+        if ($span > 0) {
+            return '';
+        }
+
         if ($this->getRawValue('addTime')) {
             if ($start == $end) {
                 $time = \Date::parse($objPage->timeFormat, $start);
