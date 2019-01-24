@@ -29,7 +29,7 @@ trait EventsItemTrait
     /**
      * @return string
      */
-    public function getHref(): string
+    public function getHref(): ?string
     {
         return $this->getDetailsUrl();
     }
@@ -37,7 +37,7 @@ trait EventsItemTrait
     /**
      * @return string
      */
-    public function getLink(): string
+    public function getLink(): ?string
     {
         return $this->title;
     }
@@ -52,7 +52,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getLinkHeadline(): string
+    public function getLinkHeadline(): ?string
     {
         // Internal link
         if ('external' !== $this->source) {
@@ -68,7 +68,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getMore(): string
+    public function getMore(): ?string
     {
         return $GLOBALS['TL_LANG']['MSC']['more'];
     }
@@ -112,7 +112,7 @@ trait EventsItemTrait
     /**
      * {@inheritdoc}
      */
-    public function getDetailsUrl(bool $external = true): string
+    public function getDetailsUrl(bool $external = true): ?string
     {
         $cacheKey = 'id_'.$this->id;
 
@@ -284,7 +284,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getTimestamp(): string
+    public function getTimestamp(): ?string
     {
         return $this->startTime;
     }
@@ -294,7 +294,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getDatetime(): string
+    public function getDatetime(): ?string
     {
         $start = $this->startTime;
         $end = $this->endTime;
@@ -307,7 +307,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getDate(): string
+    public function getDate(): ?string
     {
         global $objPage;
 
@@ -329,7 +329,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getTime(): string
+    public function getTime(): ?string
     {
         global $objPage;
 
@@ -386,7 +386,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getDetails(): string
+    public function getDetails(): ?string
     {
         $strText = '';
 
@@ -440,7 +440,7 @@ trait EventsItemTrait
      *
      * @return string
      */
-    public function getTeaser(): string
+    public function getTeaser(): ?string
     {
         return StringUtil::encodeEmail(StringUtil::toHtml5($this->teaser));
     }
