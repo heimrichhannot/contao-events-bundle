@@ -30,10 +30,11 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
      * Retrieves the sub events for a given event.
      *
      * @param int $event
+     * @param array $options
      *
      * @return mixed
      */
-    public static function getSubEvents(int $event)
+    public static function getSubEvents(int $event, array $options = [])
     {
         if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
             $table = 'tl_calendar_sub_events';
@@ -46,7 +47,7 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
         }
 
         return System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
-            $table, [$parentProperty.'=?'], [$event]
+            $table, [$parentProperty.'=?'], [$event], $options
         );
     }
 }

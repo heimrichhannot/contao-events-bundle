@@ -28,18 +28,21 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
 
     public function initCalendarSubEventsConfig()
     {
-        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
-            /*
-             * Models
-             */
-            $GLOBALS['TL_MODELS']['tl_calendar_sub_events'] = 'HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel';
+        switch (Config::get('subEventMode'))
+        {
+            case CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY:
+                /*
+                 * Models
+                 */
+                $GLOBALS['TL_MODELS']['tl_calendar_sub_events'] = 'HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel';
 
-            /*
-             * Backend modules
-             */
-            $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
-                'tables' => ['tl_calendar_sub_events', 'tl_content'],
-            ];
+                /*
+                 * Backend modules
+                 */
+                $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
+                    'tables' => ['tl_calendar_sub_events', 'tl_content'],
+                ];
+                break;
         }
     }
 
