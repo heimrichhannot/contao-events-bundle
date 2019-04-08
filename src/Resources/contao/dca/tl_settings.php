@@ -5,7 +5,7 @@ $dca = &$GLOBALS['TL_DCA']['tl_settings'];
 /**
  * Palettes
  */
-$dca['palettes']['default'] .= ';{events_bundle_legend},subEventMode;';
+$dca['palettes']['default'] .= ';{events_bundle_legend},subEventMode,skipCalendarEventCoordinateRetrieval;';
 
 /**
  * Fields
@@ -22,6 +22,12 @@ $fields = [
         ],
         'reference' => &$GLOBALS['TL_LANG']['tl_settings']['reference']['eventsBundle'],
         'eval'                    => ['tl_class' => 'w50', 'includeBlankOption' => true],
+    ],
+    'skipCalendarEventCoordinateRetrieval' => [
+        'label'                   => &$GLOBALS['TL_LANG']['tl_settings']['skipCalendarEventCoordinateRetrieval'],
+        'exclude'                 => true,
+        'inputType'               => 'checkbox',
+        'eval'                    => ['tl_class' => 'w50'],
     ],
 ];
 
