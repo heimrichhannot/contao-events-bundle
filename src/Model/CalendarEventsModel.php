@@ -37,17 +37,31 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
     public static function getSubEvents(int $event, array $options = [])
     {
         if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
-            $table = 'tl_calendar_sub_events';
+            $table          = 'tl_calendar_sub_events';
             $parentProperty = 'tl_calendar_events.pid';
         } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
-            $table = 'tl_calendar_events';
+            $table          = 'tl_calendar_events';
             $parentProperty = 'tl_calendar_events.parentEvent';
         } else {
             return null;
         }
 
         return System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
-            $table, [$parentProperty.'=?'], [$event], $options
+            $table, [$parentProperty . '=?'], [$event], $options
         );
+    }
+
+    public static function findPublishedByIdOrAlias($varId, array $options = [])
+    {
+        $t = static::$strTable;
+
+        $columns = !is_numeric($varId) ? ["$t.alias=?"] : ["$t.id=?"];
+
+        if (!static::isPreviewMode($options)) {
+            $time         = \Date::floorToMinute();
+            $columns[] = "($t.start='' OR $t.start<='$time') AND ($t.stop='' OR $t.stop>'" . ($time + 60) . "') AND $t.published='1'";
+        }
+
+        return static::findOneBy($columns, $varId, $options);
     }
 }
