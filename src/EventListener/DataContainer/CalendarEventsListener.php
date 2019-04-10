@@ -31,6 +31,49 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     use FrameworkAwareTrait;
     use ContainerAwareTrait;
 
+    public function listEvents($row)
+    {
+        $date = System::getContainer()->get('huh.utils.date')->getFormattedDateTime(
+            $row['startDate'],
+            $row['endDate'],
+            $row['addTime'],
+            $row['startTime'],
+            $row['endTime'],
+            );
+
+        return '<div class="tl_content_left">' . $row['title'] . ' <span style="color:#999;padding-left:3px">[' . $date . ']</span>' .
+            $this->getSubEventsForBackendList($row['id'])
+            . '</div>';
+    }
+
+    public function getSubEventsForBackendList(int $id)
+    {
+        // retrieve sub events
+        $subEvents = '';
+
+        /* @var CalendarEventsModel $adapter */
+        if (null !== ($adapter = System::getContainer()->get('contao.framework')->getAdapter(CalendarEventsModel::class))) {
+            if (null !== ($events = $adapter->getSubEvents($id))) {
+                while ($events->next()) {
+                    $subEventRow = $events->row();
+
+                    $date = System::getContainer()->get('huh.utils.date')->getFormattedDateTimeByEvent($events->current());
+
+
+                    $subEvents .= System::getContainer()->get('twig')->render(
+                        '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
+                            'row'        => $subEventRow,
+                            'date'       => $date,
+                            'operations' => System::getContainer()->get('huh.utils.dca')->generateDcOperationsButtons($subEventRow, 'tl_calendar_events'),
+                        ]
+                    );
+                }
+            }
+        }
+
+        return $subEvents;
+    }
+
     public function checkForSubEvents(DataContainer $dc)
     {
         /* @var CalendarEventsModel $adapter */
@@ -58,13 +101,13 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             return $value;
         }
 
-        return strtotime('1970-01-01 '.date('H:i:s', $value));
+        return strtotime('1970-01-01 ' . date('H:i:s', $value));
     }
 
     /**
      * Return the "subevents" button.
      *
-     * @param array  $row
+     * @param array $row
      * @param string $href
      * @param string $label
      * @param string $title
@@ -77,17 +120,17 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     {
         $subEvents = $this->container->get('huh.utils.model')->findModelInstancesBy('tl_calendar_sub_events', ['pid=?'], [$row['id']]);
 
-        $icon = 'bundles/heimrichhannotcontaoevents/img/icon-subevents'.(null !== $subEvents ? '-existing' : '').'.png';
+        $icon = 'bundles/heimrichhannotcontaoevents/img/icon-subevents' . (null !== $subEvents ? '-existing' : '') . '.png';
 
-        $href .= '&id='.$row['id'];
+        $href .= '&id=' . $row['id'];
 
-        return '<a href="'.Controller::addToUrl($href, true, ['id']).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+        return '<a href="' . Controller::addToUrl($href, true, ['id']) . '" title="' . StringUtil::specialchars($title) . '"' . $attributes . '>' . Image::getHtml($icon, $label) . '</a> ';
     }
 
     /**
      * Return the "create sub event" button.
      *
-     * @param array  $row
+     * @param array $row
      * @param string $href
      * @param string $label
      * @param string $title
@@ -103,15 +146,15 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             return '';
         }
 
-        $href .= '&pid='.\Input::get('id').'&parentEvent='.$row['id'].'&rt='.\RequestToken::get();
+        $href .= '&pid=' . \Input::get('id') . '&parentEvent=' . $row['id'] . '&rt=' . \RequestToken::get();
 
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+        return '<a href="' . Controller::addToUrl($href) . '" title="' . StringUtil::specialchars($title) . '"' . $attributes . '>' . Image::getHtml($icon, $label) . '</a> ';
     }
 
     /**
      * Return the "feature/unfeature element" button.
      *
-     * @param array  $row
+     * @param array $row
      * @param string $href
      * @param string $label
      * @param string $title
@@ -134,20 +177,20 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             return '';
         }
 
-        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
+        $href .= '&amp;fid=' . $row['id'] . '&amp;state=' . ($row['featured'] ? '' : 1);
 
         if (!$row['featured']) {
             $icon = 'featured_.svg';
         }
 
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
+        return '<a href="' . Controller::addToUrl($href) . '" title="' . StringUtil::specialchars($title) . '"' . $attributes . '>' . Image::getHtml($icon, $label, 'data-state="' . ($row['featured'] ? 1 : 0) . '"') . '</a> ';
     }
 
     /**
      * Feature/unfeature a calendar event.
      *
-     * @param int           $intId
-     * @param bool          $blnVisible
+     * @param int $intId
+     * @param bool $blnVisible
      * @param DataContainer $dc
      *
      * @throws \Contao\CoreBundle\Exception\AccessDeniedException
@@ -155,7 +198,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     public function toggleFeatured($intId, $blnVisible, DataContainer $dc = null)
     {
         $user = BackendUser::getInstance();
-        $db = Database::getInstance();
+        $db   = Database::getInstance();
 
         // Check permissions to edit
         Input::setGet('id', $intId);
@@ -164,7 +207,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
 
         // Check permissions to feature
         if (!$user->hasAccess('tl_calendar_events::featured', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$intId.'.');
+            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID ' . $intId . '.');
         }
 
         $objVersions = new Versions('tl_calendar_events', $intId);
@@ -174,7 +217,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
         if (\is_array($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'])) {
             foreach ($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'] as $callback) {
                 if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
+                    $obj        = System::importStatic($callback[0]);
                     $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
                 } elseif (\is_callable($callback)) {
                     $blnVisible = $callback($blnVisible, $this);
@@ -183,7 +226,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
         }
 
         // Update the database
-        $db->prepare('UPDATE tl_calendar_events SET tstamp='.time().", featured='".($blnVisible ? 1 : '')."' WHERE id=?")
+        $db->prepare('UPDATE tl_calendar_events SET tstamp=' . time() . ", featured='" . ($blnVisible ? 1 : '') . "' WHERE id=?")
             ->execute($intId);
 
         $objVersions->create();
@@ -196,8 +239,8 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
      */
     public function checkPermission()
     {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
+        $user    = BackendUser::getInstance();
+        $db      = Database::getInstance();
         $bundles = System::getContainer()->getParameter('kernel.bundles');
 
         // HOOK: comments extension required
@@ -227,7 +270,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
 
             case 'create':
                 if (!\strlen(Input::get('pid')) || !\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to create events in calendar ID '.Input::get('pid').'.');
+                    throw new AccessDeniedException('Not enough permissions to create events in calendar ID ' . Input::get('pid') . '.');
                 }
 
                 break;
@@ -235,7 +278,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             case 'cut':
             case 'copy':
                 if (!\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' to calendar ID '.Input::get('pid').'.');
+                    throw new AccessDeniedException('Not enough permissions to ' . Input::get('act') . ' event ID ' . $id . ' to calendar ID ' . Input::get('pid') . '.');
                 }
             // no break STATEMENT HERE
 
@@ -249,11 +292,11 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
                     ->execute($id);
 
                 if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid event ID '.$id.'.');
+                    throw new AccessDeniedException('Invalid event ID ' . $id . '.');
                 }
 
                 if (!\in_array($objCalendar->pid, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' of calendar ID '.$objCalendar->pid.'.');
+                    throw new AccessDeniedException('Not enough permissions to ' . Input::get('act') . ' event ID ' . $id . ' of calendar ID ' . $objCalendar->pid . '.');
                 }
 
                 break;
@@ -265,30 +308,30 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             case 'cutAll':
             case 'copyAll':
                 if (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
+                    throw new AccessDeniedException('Not enough permissions to access calendar ID ' . $id . '.');
                 }
 
                 $objCalendar = $db->prepare('SELECT id FROM tl_calendar_events WHERE pid=?')
                     ->execute($id);
 
                 if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid calendar ID '.$id.'.');
+                    throw new AccessDeniedException('Invalid calendar ID ' . $id . '.');
                 }
 
                 /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
                 $objSession = System::getContainer()->get('session');
 
-                $session = $objSession->all();
-                $session['CURRENT']['IDS'] = array_intersect((array) $session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
+                $session                   = $objSession->all();
+                $session['CURRENT']['IDS'] = array_intersect((array)$session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
                 $objSession->replace($session);
 
                 break;
 
             default:
                 if (\strlen(Input::get('act'))) {
-                    throw new AccessDeniedException('Invalid command "'.Input::get('act').'".');
+                    throw new AccessDeniedException('Invalid command "' . Input::get('act') . '".');
                 } elseif (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
+                    throw new AccessDeniedException('Not enough permissions to access calendar ID ' . $id . '.');
                 }
 
                 break;
