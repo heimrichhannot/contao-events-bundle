@@ -143,7 +143,8 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                 }
             };
 
-            $dca['list']['sorting']['child_record_callback'] = ['huh.events.event_listener.data_container.calendar_events_listener', 'listEvents'];
+	    // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
+            $dca['list']['sorting']['child_record_callback'] = [System::getContainer()->get('huh.events.event_listener.data_container.calendar_events_listener'), 'listEvents'];
 
             /*
              * Operations
