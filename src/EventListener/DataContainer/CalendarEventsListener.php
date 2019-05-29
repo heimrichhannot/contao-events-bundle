@@ -38,7 +38,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             $row['endDate'],
             $row['addTime'],
             $row['startTime'],
-            $row['endTime'],
+            $row['endTime']
             );
 
         return '<div class="tl_content_left">' . $row['title'] . ' <span style="color:#999;padding-left:3px">[' . $date . ']</span>' .
