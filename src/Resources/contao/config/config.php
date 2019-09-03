@@ -11,5 +11,5 @@ $GLOBALS['TL_HOOKS']['executePreActions']['events-bundle'] = ['huh.events.event_
  * Assets
  */
 if (System::getContainer()->get('huh.utils.container')->isBackend()) {
-    $GLOBALS['TL_CSS']['events-bundle'] = 'bundles/heimrichhannotcontaoevents/css/contao-events-bundle.be.min.css|static';
+    $GLOBALS['TL_CSS']['events-bundle'] = 'bundles/heimrichhannotcontaoevents/css/contao-events-bundle.be.css|static';
 }
