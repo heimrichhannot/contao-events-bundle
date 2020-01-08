@@ -77,7 +77,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
     public function checkForSubEvents(DataContainer $dc)
     {
         /* @var CalendarEventsModel $adapter */
-        if (null === ($adapter = $this->framework->getAdapter(CalendarEventsModel::class))) {
+        if (null === ($adapter = $this->framework->getAdapter(CalendarEventsModel::class)) || !$dc->id) {
             return;
         }
 
