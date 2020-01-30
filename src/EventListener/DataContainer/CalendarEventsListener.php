@@ -64,7 +64,9 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
                         '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
                             'row'        => $subEventRow,
                             'date'       => $date,
-                            'operations' => System::getContainer()->get('huh.utils.dca')->generateDcOperationsButtons($subEventRow, 'tl_calendar_events'),
+                            'operations' => System::getContainer()->get('huh.utils.dca')->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
+                                'skipOperations' => ['cut', 'copy']
+                            ]),
                         ]
                     );
                 }
