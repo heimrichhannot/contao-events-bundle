@@ -15,8 +15,9 @@ use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Validator;
+use HeimrichHannot\ReaderBundle\Item\DefaultItem;
 
-class DefaultReaderItem extends \HeimrichHannot\ReaderBundle\Item\DefaultItem
+class DefaultReaderItem extends DefaultItem
 {
     use EventsItemTrait;
 

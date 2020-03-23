@@ -8,7 +8,9 @@
 
 namespace HeimrichHannot\EventsBundle\Item;
 
-class DefaultListItem extends \HeimrichHannot\ListBundle\Item\DefaultItem
+use HeimrichHannot\ListBundle\Item\DefaultItem;
+
+class DefaultListItem extends DefaultItem
 {
     use EventsItemTrait;
 }

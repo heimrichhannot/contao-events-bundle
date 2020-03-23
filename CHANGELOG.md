@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2020-03-23
+
+- added customizable palette; choosable at archive config
+
 ## [1.0.2] - 2020-01-30
 
 - removed cut and copy from possible options for sub events

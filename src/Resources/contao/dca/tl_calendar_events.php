@@ -19,6 +19,7 @@ System::getContainer()->get('huh.utils.array')->insertInArrayByName(
 /**
  * Callbacks
  */
+$dca['config']['onload_callback'][] = [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'modifyPalette'];
 $dca['config']['onsubmit_callback'][] = ['huh.utils.dca', 'setDateAdded'];
 $dca['config']['oncopy_callback'][]   = ['huh.utils.dca', 'setDateAddedOnCopy'];
 
