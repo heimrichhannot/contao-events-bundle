@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2020-04-29
+- added class check for checking if contao-calendar_plus is installed, 
+if installed the dca fields in tl_calendar_events will not be replaced
+(preventing double replacing and duplicate fields)
+
 ## [1.1.0] - 2020-03-23
 
 - added customizable palette; choosable at archive config

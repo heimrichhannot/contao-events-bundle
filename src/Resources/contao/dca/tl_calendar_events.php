@@ -26,11 +26,12 @@ $dca['config']['oncopy_callback'][]   = ['huh.utils.dca', 'setDateAddedOnCopy'];
 /**
  * Palettes
  */
-$dca['palettes']['default'] = str_replace('noComments', 'noComments,featured', $dca['palettes']['default']);
-$dca['palettes']['default'] = str_replace('alias', 'alias,shortTitle,subTitle', $dca['palettes']['default']);
-$dca['palettes']['default'] = str_replace('location', '{location_legend},street,postal,city,coordinates,location,locationAdditional', $dca['palettes']['default']);
-$dca['palettes']['default'] = str_replace('{location_legend}', '{contact_legend},website;{location_legend}', $dca['palettes']['default']);
-
+if(!class_exists('HeimrichHannot\CalendarPlus\EventsPlus')) {
+    $dca['palettes']['default'] = str_replace('noComments', 'noComments,featured', $dca['palettes']['default']);
+    $dca['palettes']['default'] = str_replace('alias', 'alias,shortTitle,subTitle', $dca['palettes']['default']);
+    $dca['palettes']['default'] = str_replace('location', '{location_legend},street,postal,city,coordinates,location,locationAdditional', $dca['palettes']['default']);
+    $dca['palettes']['default'] = str_replace('{location_legend}', '{contact_legend},website;{location_legend}', $dca['palettes']['default']);
+}
 /**
  * Fields
  */
