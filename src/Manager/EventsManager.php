@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2018 Heimrich & Hannot GmbH
+ * Copyright (c) 2020 Heimrich & Hannot GmbH
  *
  * @license LGPL-3.0-or-later
  */
@@ -17,7 +17,6 @@ use Contao\DataContainer;
 use Contao\Date;
 use Contao\System;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
-use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
@@ -41,6 +40,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                 $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
                     'tables' => ['tl_calendar_sub_events', 'tl_content'],
                 ];
+
                 break;
         }
     }
@@ -56,7 +56,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
         // use the dca of tl_calendar_events as a base
         Controller::loadDataContainer('tl_calendar_events');
         System::loadLanguageFile('tl_calendar_events');
-        $dca                                          = $GLOBALS['TL_DCA']['tl_calendar_events'];
+        $dca = $GLOBALS['TL_DCA']['tl_calendar_events'];
         $GLOBALS['TL_LANG']['tl_calendar_sub_events'] = $GLOBALS['TL_LANG']['tl_calendar_events'];
 
         /*
@@ -70,10 +70,10 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
         // there are no sub-sub-events
         unset($dca['list']['operations']['subevents']);
 
-        $dca['list']['operations']['edit']['href']               = 'do=calendar_subevents&table=tl_content';
-        $dca['list']['operations']['toggle']['button_callback']  = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'toggleIcon'];
+        $dca['list']['operations']['edit']['href'] = 'do=calendar_subevents&table=tl_content';
+        $dca['list']['operations']['toggle']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'toggleIcon'];
         $dca['list']['operations']['feature']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'iconFeatured'];
-        $dca['list']['sorting']['child_record_callback']         = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'listEvents'];
+        $dca['list']['sorting']['child_record_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'listEvents'];
 
         /*
          * Callbacks
@@ -90,12 +90,12 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
         /*
          * Fields
          */
-        $dca['fields']['pid']['foreignKey']             = 'tl_calendar_events.title';
-        $dca['fields']['alias']['save_callback']        = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'generateAlias']];
-        $dca['fields']['startTime']['load_callback']    = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
-        $dca['fields']['endTime']['load_callback']      = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
-        $dca['fields']['endTime']['save_callback']      = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'setEmptyEndTime']];
-        $dca['fields']['source']['options_callback']    = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'getSourceOptions'];
+        $dca['fields']['pid']['foreignKey'] = 'tl_calendar_events.title';
+        $dca['fields']['alias']['save_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'generateAlias']];
+        $dca['fields']['startTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
+        $dca['fields']['endTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
+        $dca['fields']['endTime']['save_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'setEmptyEndTime']];
+        $dca['fields']['source']['options_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'getSourceOptions'];
         $dca['fields']['articleId']['options_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'getArticleAlias'];
     }
 
@@ -108,8 +108,8 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              * Operations
              */
             $dca['list']['operations']['subevents'] = [
-                'label'           => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
-                'href'            => 'table=tl_calendar_sub_events',
+                'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
+                'href' => 'table=tl_calendar_sub_events',
                 'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconSubEvents'],
             ];
 
@@ -143,7 +143,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                 }
             };
 
-	    // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
+            // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
             $dca['list']['sorting']['child_record_callback'] = [System::getContainer()->get('huh.events.event_listener.data_container.calendar_events_listener'), 'listEvents'];
 
             /*
@@ -153,9 +153,9 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                 $dca['list']['operations'],
                 'copy', [
                 'create_sub_event' => [
-                    'label'           => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
-                    'icon'            => 'new.svg',
-                    'href'            => 'act=create&mode=2',
+                    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
+                    'icon' => 'new.svg',
+                    'href' => 'act=create&mode=2',
                     'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconCreateSubEvent'],
                 ],
             ], 1
@@ -176,11 +176,11 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              */
             $fields = [
                 'parentEvent' => [
-                    'label'            => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
-                    'exclude'          => true,
-                    'filter'           => true,
-                    'default'          => \Input::get('parentEvent') ?: 0,
-                    'inputType'        => 'select',
+                    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
+                    'exclude' => true,
+                    'filter' => true,
+                    'default' => \Input::get('parentEvent') ?: 0,
+                    'inputType' => 'select',
                     'options_callback' => function (\Contao\DataContainer $dc) {
                         $options = [];
 
@@ -191,14 +191,14 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                         if (null !== ($events = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
                                 'tl_calendar_events', $columns, [$dc->id], ['order' => 'tl_calendar_events.startTime DESC']))) {
                             while ($events->next()) {
-                                $options[$events->id] = $events->title . ' (' . date(\Contao\Config::get('dateFormat'), $events->startTime) . ', ID ' . $events->id . ')';
+                                $options[$events->id] = $events->title.' ('.date(\Contao\Config::get('dateFormat'), $events->startTime).', ID '.$events->id.')';
                             }
                         }
 
                         return $options;
                     },
-                    'eval'             => ['tl_class' => 'w50', 'includeBlankOption' => true, 'chosen' => true],
-                    'sql'              => "int(10) unsigned NOT NULL default '0'",
+                    'eval' => ['tl_class' => 'w50', 'includeBlankOption' => true, 'chosen' => true],
+                    'sql' => "int(10) unsigned NOT NULL default '0'",
                 ],
             ];
 

@@ -1,28 +1,29 @@
 <?php
 
+/*
+ * Copyright (c) 2020 Heimrich & Hannot GmbH
+ *
+ * @license LGPL-3.0-or-later
+ */
 
 namespace HeimrichHannot\EventsBundle\DataContainer;
-
 
 use Contao\DataContainer;
 use Contao\System;
 
 class CalendarEventsContainer
 {
-    /**
-     * @param DataContainer $dc
-     */
     public function modifyPalette(DataContainer $dc): void
     {
-        if(null === ($news = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar_events', $dc->id))) {
+        if (null === ($news = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar_events', $dc->id))) {
             return;
         }
 
-        if(null === ($archive = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar', $news->pid))) {
+        if (null === ($archive = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar', $news->pid))) {
             return;
         }
 
-        if(!$archive->addCustomEventsPalettes || !$archive->customEventsPalettes) {
+        if (!$archive->addCustomEventsPalettes || !$archive->customEventsPalettes) {
             return;
         }
 

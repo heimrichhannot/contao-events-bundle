@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2018 Heimrich & Hannot GmbH
+ * Copyright (c) 2020 Heimrich & Hannot GmbH
  *
  * @license LGPL-3.0-or-later
  */
@@ -94,8 +94,6 @@ trait EventsItemTrait
 
     /**
      * Get details url and add archive.
-     *
-     * @return null|string
      */
     public function getDetailsUrlWithArchive(): ?string
     {
@@ -138,8 +136,6 @@ trait EventsItemTrait
 
     /**
      * Get the external url source = 'external'.
-     *
-     * @return null|string
      */
     public function getExternalUrl(): ?string
     {
@@ -161,8 +157,6 @@ trait EventsItemTrait
 
     /**
      * Get the internal url source = 'internal'.
-     *
-     * @return null|string
      */
     public function getInternalUrl(): ?string
     {
@@ -182,8 +176,6 @@ trait EventsItemTrait
 
     /**
      * Get the article url source = 'article'.
-     *
-     * @return null|string
      */
     public function getArticleUrl(): ?string
     {
@@ -206,8 +198,6 @@ trait EventsItemTrait
 
     /**
      * Get the default url source = 'default'.
-     *
-     * @return null|string
      */
     public function getDefaultUrl(): ?string
     {
@@ -239,8 +229,6 @@ trait EventsItemTrait
 
     /**
      * Get the author.
-     *
-     * @return null|string
      */
     public function getAuthor(): ?string
     {
@@ -253,8 +241,6 @@ trait EventsItemTrait
 
     /**
      * Compile comment count.
-     *
-     * @return null|string
      */
     public function getCommentCount(): ?string
     {
@@ -265,8 +251,6 @@ trait EventsItemTrait
 
     /**
      * Get number of comments.
-     *
-     * @return int|null
      */
     public function getNumberOfComments(): ?int
     {
@@ -366,8 +350,6 @@ trait EventsItemTrait
 
     /**
      * Get all enclosures.
-     *
-     * @return array|null
      */
     public function getEnclosures(): ?array
     {
@@ -409,8 +391,6 @@ trait EventsItemTrait
 
     /**
      * Check if text is available.
-     *
-     * @return bool
      */
     public function getHasDetails(): bool
     {
@@ -427,8 +407,6 @@ trait EventsItemTrait
 
     /**
      * Check if a teaser text is available.
-     *
-     * @return bool
      */
     public function hasTeaser(): bool
     {

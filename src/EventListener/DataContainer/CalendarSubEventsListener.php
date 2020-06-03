@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2018 Heimrich & Hannot GmbH
+ * Copyright (c) 2020 Heimrich & Hannot GmbH
  *
  * @license LGPL-3.0-or-later
  */
@@ -225,8 +225,7 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
     /**
      * Auto-generate the event alias if it has not been set yet.
      *
-     * @param mixed         $varValue
-     * @param DataContainer $dc
+     * @param mixed $varValue
      *
      * @throws \Exception
      *
@@ -277,8 +276,7 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
     /**
      * Automatically set the end time if not set.
      *
-     * @param mixed         $varValue
-     * @param DataContainer $dc
+     * @param mixed $varValue
      *
      * @return string
      */
@@ -315,8 +313,6 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
 
     /**
      * Get all articles and return them as array.
-     *
-     * @param DataContainer $dc
      *
      * @return array
      */
@@ -358,8 +354,6 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
     /**
      * Add the source options depending on the allowed fields (see #5498).
      *
-     * @param DataContainer $dc
-     *
      * @return array
      */
     public function getSourceOptions(DataContainer $dc)
@@ -398,8 +392,6 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
 
     /**
      * Adjust start end end time of the event based on date, span, startTime and endTime.
-     *
-     * @param DataContainer $dc
      */
     public function adjustTime(DataContainer $dc)
     {
