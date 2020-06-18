@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2020-06-18
+- removed urlCache in `EventsItemTrait` -> doesn't make sense if different `jumpToDetails` are set
+- fixed canonical link generation
+
 ## [1.1.2] - 2020-06-03
 - fixed robots in reader
 

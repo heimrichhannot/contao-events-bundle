@@ -20,13 +20,6 @@ use HeimrichHannot\ListBundle\Manager\ListManagerInterface;
 trait EventsItemTrait
 {
     /**
-     * URL cache array.
-     *
-     * @var array
-     */
-    private static $urlCache = [];
-
-    /**
      * @return string
      */
     public function getHref(): ?string
@@ -110,15 +103,8 @@ trait EventsItemTrait
     /**
      * {@inheritdoc}
      */
-    public function getDetailsUrl(bool $external = true): ?string
+    public function getDetailsUrl(bool $external = true, bool $isCanonical = false): ?string
     {
-        $cacheKey = 'id_'.$this->id;
-
-        // Load the URL from cache
-        if (isset(self::$urlCache[$cacheKey])) {
-            return self::$urlCache[$cacheKey];
-        }
-
         switch ($this->source) {
             // Link to an external page
             case 'external':
@@ -131,7 +117,7 @@ trait EventsItemTrait
                 return $this->getArticleUrl();
         }
 
-        return $this->getDefaultUrl();
+        return $this->getDefaultUrl($isCanonical);
     }
 
     /**
@@ -139,20 +125,13 @@ trait EventsItemTrait
      */
     public function getExternalUrl(): ?string
     {
-        $cacheKey = 'id_'.$this->id;
-
-        // Load the URL from cache
-        if (isset(self::$urlCache[$cacheKey])) {
-            return self::$urlCache[$cacheKey];
-        }
-
         if ('mailto:' == substr($this->url, 0, 7)) {
-            self::$urlCache[$cacheKey] = StringUtil::encodeEmail($this->url);
+            $url = StringUtil::encodeEmail($this->url);
         } else {
-            self::$urlCache[$cacheKey] = ampersand($this->url);
+            $url = ampersand($this->url);
         }
 
-        return self::$urlCache[$cacheKey] ?? null;
+        return $url ?? null;
     }
 
     /**
@@ -160,18 +139,13 @@ trait EventsItemTrait
      */
     public function getInternalUrl(): ?string
     {
-        $cacheKey = 'id_'.$this->id;
-
-        // Load the URL from cache
-        if (isset(self::$urlCache[$cacheKey])) {
-            return self::$urlCache[$cacheKey];
-        }
+        $url = '';
 
         if (null !== ($target = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_page', $this->jumpTo))) {
-            self::$urlCache[$cacheKey] = ampersand($target->getFrontendUrl());
+            $url = ampersand($target->getFrontendUrl());
         }
 
-        return self::$urlCache[$cacheKey] ?? null;
+        return $url ?? null;
     }
 
     /**
@@ -179,37 +153,25 @@ trait EventsItemTrait
      */
     public function getArticleUrl(): ?string
     {
-        $cacheKey = 'id_'.$this->id;
-
-        // Load the URL from cache
-        if (isset(self::$urlCache[$cacheKey])) {
-            return self::$urlCache[$cacheKey];
-        }
+        $url = '';
 
         $modelUtil = System::getContainer()->get('huh.utils.model');
 
         if (null !== ($article = $modelUtil->findModelInstanceByPk('tl_article', $this->articleId, ['eager' => true])) &&
             null !== ($parentPage = $modelUtil->findModelInstanceByPk('tl_page', $article->pid))) {
-            self::$urlCache[$cacheKey] = ampersand($parentPage->getFrontendUrl('/articles/'.($article->alias ?: $article->id)));
+            $url = ampersand($parentPage->getFrontendUrl('/articles/'.($article->alias ?: $article->id)));
         }
 
-        return self::$urlCache[$cacheKey] ?? null;
+        return $url ?? null;
     }
 
     /**
      * Get the default url source = 'default'.
      */
-    public function getDefaultUrl(): ?string
+    public function getDefaultUrl(bool $isCanonical = false): ?string
     {
-        $cacheKey = 'id_'.$this->id;
-
-        // Load the URL from cache
-        if (isset(self::$urlCache[$cacheKey])) {
-            return self::$urlCache[$cacheKey];
-        }
-
-        if ($this->getManager() instanceof ListManagerInterface && $this->getManager()->getListConfig()->addDetails) {
-            self::$urlCache[$cacheKey] = parent::getDetailsUrl();
+        if (!$isCanonical && $this->getManager() instanceof ListManagerInterface && $this->getManager()->getListConfig()->addDetails) {
+            $url = $this->_detailsUrl;
         } else {
             $modelUtil = System::getContainer()->get('huh.utils.model');
 
@@ -218,13 +180,13 @@ trait EventsItemTrait
             }
 
             if (null === ($page = $modelUtil->findModelInstanceByPk('tl_page', $archive->jumpTo))) {
-                self::$urlCache[$cacheKey] = ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
+                $url = ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
             } else {
-                self::$urlCache[$cacheKey] = ampersand($page->getFrontendUrl((Config::get('useAutoItem') ? '/' : '/items/').($this->alias ?: $this->id)));
+                $url = ampersand($page->getFrontendUrl((Config::get('useAutoItem') ? '/' : '/items/').($this->alias ?: $this->id)));
             }
         }
 
-        return self::$urlCache[$cacheKey] ?? null;
+        return $url ?? null;
     }
 
     /**
