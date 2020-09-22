@@ -332,23 +332,7 @@ trait EventsItemTrait
      */
     public function getDetails(): ?string
     {
-        $strText = '';
-
-        /**
-         * @var ContentModel
-         */
-        $adapter = $this->getManager()->getFramework()->getAdapter(ContentModel::class);
-
-        if (null !== ($elements = $adapter->findPublishedByPidAndTable($this->id, $this->getDataContainer()))) {
-            foreach ($elements as $element) {
-                try {
-                    $strText .= Controller::getContentElement($element->id);
-                } catch (\ErrorException $e) {
-                }
-            }
-        }
-
-        return $strText;
+        return System::getContainer()->get('huh.utils.content')->getMultilingualElements($this->getRawValue('id'), $this->getDataContainer());
     }
 
     /**

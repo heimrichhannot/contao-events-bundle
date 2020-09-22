@@ -6,7 +6,7 @@
   "require": {
     "php": "^7.1",
     "contao/core-bundle": "^4.4",
-    "heimrichhannot/contao-utils-bundle": "^2.109.0"
+    "heimrichhannot/contao-utils-bundle": "^2.179"
   },
   "require-dev": {
     "contao/test-case": "1.1.*",
