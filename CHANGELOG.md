@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2020-09-23
+- added support for multilingual events in model class
+
 ## [1.3.0] - 2020-09-22
 - added support for multilingual content elements in `EventTrait`
 

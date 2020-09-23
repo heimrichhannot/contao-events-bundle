@@ -55,6 +55,6 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
             $columns[] = "($t.start='' OR $t.start<='$time') AND ($t.stop='' OR $t.stop>'".($time + 60)."') AND $t.published='1'";
         }
 
-        return static::findOneBy($columns, $varId, $options);
+        return System::getContainer()->get('huh.utils.model')->callModelMethod('tl_calendar_events', 'findOneBy', $columns, $varId, $options);
     }
 }
