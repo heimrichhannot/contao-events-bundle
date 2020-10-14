@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2020-10-14
+- refactored `tl_calendar_events`
+- added LoadDataContainerListener for palette manipulation
+- added `onSaveCoordinates` to CalendarEventsContainer
+
 ## [1.4.0] - 2020-09-23
 - added support for multilingual events in model class
 

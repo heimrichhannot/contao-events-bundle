@@ -8,6 +8,7 @@
 
 namespace HeimrichHannot\EventsBundle\DataContainer;
 
+use Contao\Config;
 use Contao\DataContainer;
 use Contao\System;
 
@@ -39,5 +40,16 @@ class CalendarEventsContainer
                 System::importStatic($callback[0])->{$callback[1]}($dc->table);
             }
         }
+    }
+
+    public function onSaveCoordinates($value, ?DataContainer $dc): string
+    {
+        if (Config::get('skipCalendarEventCoordinateRetrieval')) {
+            return $value;
+        }
+
+        return System::getContainer()->get('huh.utils.location')->computeCoordinatesInSaveCallback(
+            $value, $dc
+        );
     }
 }
