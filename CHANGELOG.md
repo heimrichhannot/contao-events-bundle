@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2021-02-03
+- fixed palette manipulation in LoadDataContainerListener
+
 ## [1.5.0] - 2020-10-14
 - refactored `tl_calendar_events`
 - added LoadDataContainerListener for palette manipulation
