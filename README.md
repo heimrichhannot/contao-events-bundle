@@ -23,11 +23,15 @@ Install via composer: `composer require heimrichhannot/contao-events-bundle` and
 You can activate sub events in the global Contao settings. Here you have the following 2 options. Which one you take depends on
 if the sub events can be a separate entity (`tl_calendar_sub_events`) or need to be instances of `tl_calendar_events`.
 
+In both cases, activate the appropriate checkbox in the global contao settings. Afterwards clear the cache and update the database.
+
 #### Realization as an entity "tl_calendar_sub_events"
 
 The `tl_calendar_sub_events` dca is created by copying the dca of `tl_calendar_events` and resetting some callbacks. See `tl_calendar_sub_events.php` for more details on that.
 
 #### Realization using a parent-child-relation
+
+A new field `parentEVent` is added to `tl_calendar_events`
 
 ### New fields
 
