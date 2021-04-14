@@ -9,31 +9,57 @@
 namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
 
 use Contao\BackendUser;
-use Contao\Calendar;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\AccessDeniedException;
-use Contao\CoreBundle\Framework\FrameworkAwareInterface;
-use Contao\CoreBundle\Framework\FrameworkAwareTrait;
+use Contao\CoreBundle\Framework\ContaoFrameworkInterface;
 use Contao\Database;
 use Contao\DataContainer;
-use Contao\Date;
 use Contao\Image;
 use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
 use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
+use HeimrichHannot\UtilsBundle\Date\DateUtil;
+use HeimrichHannot\UtilsBundle\Dca\DcaUtil;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
-class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareInterface
+class CalendarEventsListener
 {
-    use FrameworkAwareTrait;
-    use ContainerAwareTrait;
+    /**
+     * @var DateUtil
+     */
+    protected $dateUtil;
+    /**
+     * @var DcaUtil
+     */
+    protected $dcaUtil;
+    /**
+     * @var ContainerUtil
+     */
+    protected $containerUtil;
+    /**
+     * @var ModelUtil
+     */
+    protected $modelUtil;
+    /**
+     * @var ContaoFrameworkInterface
+     */
+    protected $framework;
+
+    public function __construct(ContaoFrameworkInterface $framework, DateUtil $dateUtil, DcaUtil $dcaUtil, ContainerUtil $containerUtil, ModelUtil $modelUtil)
+    {
+        $this->framework = $framework;
+        $this->dateUtil = $dateUtil;
+        $this->dcaUtil = $dcaUtil;
+        $this->containerUtil = $containerUtil;
+        $this->modelUtil = $modelUtil;
+    }
 
     public function listEvents($row)
     {
-        $date = System::getContainer()->get('huh.utils.date')->getFormattedDateTime(
+        $date = $this->dateUtil->getFormattedDateTime(
             $row['startDate'],
             $row['endDate'],
             $row['addTime'],
@@ -52,18 +78,18 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
         $subEvents = '';
 
         /* @var CalendarEventsModel $adapter */
-        if (null !== ($adapter = System::getContainer()->get('contao.framework')->getAdapter(CalendarEventsModel::class))) {
+        if (null !== ($adapter = $this->framework->getAdapter(CalendarEventsModel::class))) {
             if (null !== ($events = $adapter->getSubEvents($id))) {
                 while ($events->next()) {
                     $subEventRow = $events->row();
 
-                    $date = System::getContainer()->get('huh.utils.date')->getFormattedDateTimeByEvent($events->current());
+                    $date = $this->dateUtil->getFormattedDateTimeByEvent($events->current());
 
                     $subEvents .= System::getContainer()->get('twig')->render(
                         '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
                             'row' => $subEventRow,
                             'date' => $date,
-                            'operations' => System::getContainer()->get('huh.utils.dca')->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
+                            'operations' => $this->dcaUtil->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
                                 'skipOperations' => ['cut', 'copy'],
                             ]),
                         ]
@@ -82,7 +108,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
             return;
         }
 
-        if ($adapter->hasSubEvents($dc->id)) {
+        if ($adapter->hasSubEvents((int) ($dc->id))) {
             $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
             unset($dca['fields']['parentEvent']);
@@ -98,7 +124,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
      */
     public function loadTime($value)
     {
-        if ($this->container->get('huh.utils.container')->isFrontend()) {
+        if ($this->containerUtil->isFrontend()) {
             return $value;
         }
 
@@ -119,7 +145,7 @@ class CalendarEventsListener implements FrameworkAwareInterface, ContainerAwareI
      */
     public function iconSubEvents($row, $href, $label, $title, $icon, $attributes)
     {
-        $subEvents = $this->container->get('huh.utils.model')->findModelInstancesBy('tl_calendar_sub_events', ['pid=?'], [$row['id']]);
+        $subEvents = $this->modelUtil->findModelInstancesBy('tl_calendar_sub_events', ['pid=?'], [$row['id']]);
 
         $icon = 'bundles/heimrichhannotcontaoevents/img/icon-subevents'.(null !== $subEvents ? '-existing' : '').'.png';
 

@@ -1,3 +1,3 @@
 <?php
 
-System::getContainer()->get('huh.events.manager.events_manager')->initCalendarSubEventsDca();
+System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarSubEventsDca();

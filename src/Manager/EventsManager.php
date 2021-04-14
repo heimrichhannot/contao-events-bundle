@@ -8,22 +8,31 @@
 
 namespace HeimrichHannot\EventsBundle\Manager;
 
-use Contao\Calendar;
 use Contao\Config;
 use Contao\Controller;
-use Contao\CoreBundle\Framework\FrameworkAwareInterface;
-use Contao\CoreBundle\Framework\FrameworkAwareTrait;
 use Contao\DataContainer;
-use Contao\Date;
 use Contao\System;
+use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use HeimrichHannot\UtilsBundle\Arrays\ArrayUtil;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
-class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
+class EventsManager
 {
-    use FrameworkAwareTrait;
-    use ContainerAwareTrait;
+    /**
+     * @var ModelUtil
+     */
+    protected $modelUtil;
+    /**
+     * @var ArrayUtil
+     */
+    protected $arrayUtil;
+
+    public function __construct(ModelUtil $modelUtil, ArrayUtil $arrayUtil)
+    {
+        $this->modelUtil = $modelUtil;
+        $this->arrayUtil = $arrayUtil;
+    }
 
     public function initCalendarSubEventsConfig()
     {
@@ -110,7 +119,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             $dca['list']['operations']['subevents'] = [
                 'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
                 'href' => 'table=tl_calendar_sub_events',
-                'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconSubEvents'],
+                'button_callback' => [CalendarEventsListener::class, 'iconSubEvents'],
             ];
 
             /**
@@ -120,7 +129,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
 
             foreach ($dca['config']['onload_callback'] as $callback) {
                 if ('checkPermission' === $callback[1]) {
-                    $callbacks[] = ['huh.events.event_listener.data_container.calendar_events_listener', 'checkPermission'];
+                    $callbacks[] = [CalendarEventsListener::class, 'checkPermission'];
 
                     continue;
                 }
@@ -135,7 +144,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
              */
             // hide child elements
             $dca['config']['onload_callback'][] = function (DataContainer $dc) use (&$dca) {
-                if ('calendar' === \Input::get('do') && null !== ($subEvents = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+                if ('calendar' === \Input::get('do') && null !== ($subEvents = $this->modelUtil->findModelInstancesBy(
                         'tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], []))) {
                     foreach ($subEvents->fetchEach('id') as $id) {
                         $dca['list']['sorting']['root'][] = $id;
@@ -144,19 +153,19 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             };
 
             // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
-            $dca['list']['sorting']['child_record_callback'] = [System::getContainer()->get('huh.events.event_listener.data_container.calendar_events_listener'), 'listEvents'];
+            $dca['list']['sorting']['child_record_callback'] = [CalendarEventsListener::class, 'listEvents'];
 
             /*
              * Operations
              */
-            System::getContainer()->get('huh.utils.array')->insertInArrayByName(
+            $this->arrayUtil->insertInArrayByName(
                 $dca['list']['operations'],
                 'copy', [
                 'create_sub_event' => [
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
                     'icon' => 'new.svg',
                     'href' => 'act=create&mode=2',
-                    'button_callback' => ['huh.events.event_listener.data_container.calendar_events_listener', 'iconCreateSubEvent'],
+                    'button_callback' => [CalendarEventsListener::class, 'iconCreateSubEvent'],
                 ],
             ], 1
             );
@@ -164,7 +173,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
             /*
              * Callbacks
              */
-            $dca['config']['onload_callback'][] = ['huh.events.event_listener.data_container.calendar_events_listener', 'checkForSubEvents'];
+            $dca['config']['onload_callback'][] = [CalendarEventsListener::class, 'checkForSubEvents'];
 
             /*
              * Palettes
@@ -188,7 +197,7 @@ class EventsManager implements FrameworkAwareInterface, ContainerAwareInterface
                         // at first, get all parent event ids
                         $columns = ['tl_calendar_events.id != ?', 'tl_calendar_events.parentEvent = 0'];
 
-                        if (null !== ($events = System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+                        if (null !== ($events = $this->modelUtil->findModelInstancesBy(
                                 'tl_calendar_events', $columns, [$dc->id], ['order' => 'tl_calendar_events.startTime DESC']))) {
                             while ($events->next()) {
                                 $options[$events->id] = $events->title.' ('.date(\Contao\Config::get('dateFormat'), $events->startTime).', ID '.$events->id.')';

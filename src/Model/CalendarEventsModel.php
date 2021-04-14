@@ -11,6 +11,7 @@ namespace HeimrichHannot\EventsBundle\Model;
 use Contao\Config;
 use Contao\System;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 class CalendarEventsModel extends \Contao\CalendarEventsModel
 {
@@ -39,7 +40,7 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
             return null;
         }
 
-        return System::getContainer()->get('huh.utils.model')->findModelInstancesBy(
+        return System::getContainer()->get(ModelUtil::class)->findModelInstancesBy(
             $table, [$parentProperty.'=?'], [$event], $options
         );
     }
@@ -55,6 +56,6 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
             $columns[] = "($t.start='' OR $t.start<='$time') AND ($t.stop='' OR $t.stop>'".($time + 60)."') AND $t.published='1'";
         }
 
-        return System::getContainer()->get('huh.utils.model')->callModelMethod('tl_calendar_events', 'findOneBy', $columns, $varId, $options);
+        return System::getContainer()->get(ModelUtil::class)->callModelMethod('tl_calendar_events', 'findOneBy', $columns, $varId, $options);
     }
 }

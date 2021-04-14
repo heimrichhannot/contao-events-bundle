@@ -38,8 +38,6 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
     public function registerContainerConfiguration(LoaderInterface $loader, array $managerConfig)
     {
         $loader->load(__DIR__.'/../Resources/config/services.yml');
-        $loader->load(__DIR__.'/../Resources/config/listeners.yml');
-        $loader->load(__DIR__.'/../Resources/config/datacontainers.yml');
     }
 
     /**

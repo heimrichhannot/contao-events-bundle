@@ -13,8 +13,6 @@ use Contao\Calendar;
 use Contao\Config;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\AccessDeniedException;
-use Contao\CoreBundle\Framework\FrameworkAwareInterface;
-use Contao\CoreBundle\Framework\FrameworkAwareTrait;
 use Contao\Database;
 use Contao\DataContainer;
 use Contao\Date;
@@ -23,16 +21,21 @@ use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
 
-class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwareInterface
+class CalendarSubEventsListener
 {
-    use FrameworkAwareTrait;
-    use ContainerAwareTrait;
-
     const SUB_EVENT_MODE_ENTITY = 'entity';
     const SUB_EVENT_MODE_RELATION = 'relation';
+    /**
+     * @var ContainerUtil
+     */
+    protected $containerUtil;
+
+    public function __construct(ContainerUtil $containerUtil)
+    {
+        $this->containerUtil = $containerUtil;
+    }
 
     /**
      * Return the "feature/unfeature element" button.
@@ -122,7 +125,7 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
      */
     public function checkPermission()
     {
-        $bundles = $this->container->getParameter('kernel.bundles');
+        $bundles = System::getContainer()->getParameter('kernel.bundles');
 
         // HOOK: comments extension required
         if (!isset($bundles['ContaoCommentsBundle'])) {
@@ -203,7 +206,7 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
                 }
 
                 /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
-                $objSession = $this->container->get('session');
+                $objSession = System::getContainer()->get('session');
 
                 $session = $objSession->all();
                 $session['CURRENT']['IDS'] = array_intersect((array) $session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
@@ -266,7 +269,7 @@ class CalendarSubEventsListener implements FrameworkAwareInterface, ContainerAwa
      */
     public function loadTime($value)
     {
-        if ($this->container->get('huh.utils.container')->isFrontend()) {
+        if ($this->containerUtil->isFrontend()) {
             return $value;
         }
 

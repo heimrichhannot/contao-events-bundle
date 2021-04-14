@@ -16,6 +16,7 @@ use Contao\StringUtil;
 use Contao\System;
 use Contao\Validator;
 use HeimrichHannot\ReaderBundle\Item\DefaultItem;
+use HeimrichHannot\UtilsBundle\File\FileUtil;
 
 class DefaultReaderItem extends DefaultItem
 {
@@ -41,7 +42,7 @@ class DefaultReaderItem extends DefaultItem
         $image = $this->getFormattedValue('singleSRC');
 
         if (Validator::isBinaryUuid($image)) {
-            $image = System::getContainer()->get('huh.utils.file')->getPathFromUuid($image);
+            $image = System::getContainer()->get(FileUtil::class)->getPathFromUuid($image);
         }
 
         $container->get('huh.head.tag.meta_robots')->setContent($article['robots'] ?: ($objPage->robots ?: 'index,follow'));

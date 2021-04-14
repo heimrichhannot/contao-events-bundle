@@ -9,16 +9,12 @@
 namespace HeimrichHannot\EventsBundle\EventListener\Hook;
 
 use Contao\CoreBundle\Exception\NoContentResponseException;
-use Contao\CoreBundle\Framework\FrameworkAwareInterface;
-use Contao\CoreBundle\Framework\FrameworkAwareTrait;
-use Symfony\Component\DependencyInjection\ContainerAwareInterface;
-use Symfony\Component\DependencyInjection\ContainerAwareTrait;
+use Contao\System;
+use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener;
+use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
 
-class HookListener implements FrameworkAwareInterface, ContainerAwareInterface
+class HookListener
 {
-    use FrameworkAwareTrait;
-    use ContainerAwareTrait;
-
     public function executePreActions(string $action)
     {
         if ('toggleFeatured' !== $action || 'calendar' !== \Input::get('do')) {
@@ -26,14 +22,14 @@ class HookListener implements FrameworkAwareInterface, ContainerAwareInterface
         }
 
         if ('tl_calendar_events' === \Input::get('table')) {
-            $listener = 'huh.events.event_listener.data_container.calendar_events_listener';
+            $listener = CalendarEventsListener::class;
         } elseif ('tl_calendar_sub_events' === \Input::get('table')) {
-            $listener = 'huh.events.event_listener.data_container.calendar_sub_events_listener';
+            $listener = CalendarSubEventsListener::class;
         } else {
             return;
         }
 
-        $this->container->get($listener)->toggleFeatured(\Input::post('id'), ((1 == \Input::post('state')) ? true : false));
+        System::getContainer()->get($listener)->toggleFeatured(\Input::post('id'), ((1 == \Input::post('state')) ? true : false));
 
         throw new NoContentResponseException();
     }

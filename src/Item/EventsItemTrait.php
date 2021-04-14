@@ -16,6 +16,9 @@ use Contao\ModuleLoader;
 use Contao\StringUtil;
 use Contao\System;
 use HeimrichHannot\ListBundle\Manager\ListManagerInterface;
+use HeimrichHannot\RequestBundle\Component\HttpFoundation\Request;
+use HeimrichHannot\UtilsBundle\Content\ContentUtil;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 trait EventsItemTrait
 {
@@ -73,7 +76,7 @@ trait EventsItemTrait
      */
     public function getCalendar(): ?array
     {
-        if (null === ($calendar = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar', $this->pid))) {
+        if (null === ($calendar = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_calendar', $this->pid))) {
             return null;
         }
 
@@ -93,8 +96,8 @@ trait EventsItemTrait
         $url = $this->getDetailsUrl();
 
         // Add the current calendar parameter
-        if (System::getContainer()->get('huh.request')->query->has('month')) {
-            $url .= '?month='.System::getContainer()->get('huh.request')->query->get('month');
+        if (System::getContainer()->get(Request::class)->query->has('month')) {
+            $url .= '?month='.System::getContainer()->get(Request::class)->query->get('month');
         }
 
         return $url;
@@ -141,7 +144,7 @@ trait EventsItemTrait
     {
         $url = '';
 
-        if (null !== ($target = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_page', $this->jumpTo))) {
+        if (null !== ($target = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_page', $this->jumpTo))) {
             $url = ampersand($target->getFrontendUrl());
         }
 
@@ -155,7 +158,7 @@ trait EventsItemTrait
     {
         $url = '';
 
-        $modelUtil = System::getContainer()->get('huh.utils.model');
+        $modelUtil = System::getContainer()->get(ModelUtil::class);
 
         if (null !== ($article = $modelUtil->findModelInstanceByPk('tl_article', $this->articleId, ['eager' => true])) &&
             null !== ($parentPage = $modelUtil->findModelInstanceByPk('tl_page', $article->pid))) {
@@ -173,7 +176,7 @@ trait EventsItemTrait
         if (!$isCanonical && $this->getManager() instanceof ListManagerInterface && $this->getManager()->getListConfig()->addDetails) {
             $url = $this->_detailsUrl;
         } else {
-            $modelUtil = System::getContainer()->get('huh.utils.model');
+            $modelUtil = System::getContainer()->get(ModelUtil::class);
 
             if (null === ($archive = $modelUtil->findModelInstanceByPk('tl_calendar', $this->pid))) {
                 return null;
@@ -194,7 +197,7 @@ trait EventsItemTrait
      */
     public function getAuthor(): ?string
     {
-        if (null !== ($user = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_user', $this->author))) {
+        if (null !== ($user = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_user', $this->author))) {
             return $GLOBALS['TL_LANG']['MSC']['by'].' '.$user->name;
         }
 
@@ -332,7 +335,7 @@ trait EventsItemTrait
      */
     public function getDetails(): ?string
     {
-        return System::getContainer()->get('huh.utils.content')->getMultilingualElements($this->getRawValue('id'), $this->getDataContainer());
+        return System::getContainer()->get(ContentUtil::class)->getMultilingualElements($this->getRawValue('id'), $this->getDataContainer());
     }
 
     /**

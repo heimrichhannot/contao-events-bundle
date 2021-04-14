@@ -6,7 +6,7 @@
  * @license LGPL-3.0-or-later
  */
 
-System::getContainer()->get('huh.events.manager.events_manager')->initCalendarSubEventsConfig();
+System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarSubEventsConfig();
 
 /*
  * Hooks
@@ -19,6 +19,6 @@ $GLOBALS['TL_HOOKS']['loadDataContainer']['huh_events'] = [
 /*
  * Assets
  */
-if (System::getContainer()->get('huh.utils.container')->isBackend()) {
+if (System::getContainer()->get(\HeimrichHannot\UtilsBundle\Container\ContainerUtil::class)->isBackend()) {
     $GLOBALS['TL_CSS']['events-bundle'] = 'bundles/heimrichhannotcontaoevents/css/contao-events-bundle.be.css|static';
 }

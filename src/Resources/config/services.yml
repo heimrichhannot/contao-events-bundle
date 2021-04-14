@@ -1,5 +1,7 @@
 services:
-  huh.events.manager.events_manager:
-    class: HeimrichHannot\EventsBundle\Manager\EventsManager
+  _defaults:
     public: true
     autowire: true
+
+  HeimrichHannot\EventsBundle\:
+    resource: '../../{DataContainer,EventListener,Manager}/*'

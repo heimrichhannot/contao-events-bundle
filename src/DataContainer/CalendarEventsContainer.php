@@ -11,16 +11,33 @@ namespace HeimrichHannot\EventsBundle\DataContainer;
 use Contao\Config;
 use Contao\DataContainer;
 use Contao\System;
+use HeimrichHannot\UtilsBundle\Location\LocationUtil;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 class CalendarEventsContainer
 {
+    /**
+     * @var ModelUtil
+     */
+    protected $modelUtil;
+    /**
+     * @var LocationUtil
+     */
+    protected $locationUtil;
+
+    public function __construct(ModelUtil $modelUtil, LocationUtil $locationUtil)
+    {
+        $this->modelUtil = $modelUtil;
+        $this->locationUtil = $locationUtil;
+    }
+
     public function modifyPalette(DataContainer $dc): void
     {
-        if (null === ($news = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar_events', $dc->id))) {
+        if (null === ($news = $this->modelUtil->findModelInstanceByPk('tl_calendar_events', $dc->id))) {
             return;
         }
 
-        if (null === ($archive = System::getContainer()->get('huh.utils.model')->findModelInstanceByPk('tl_calendar', $news->pid))) {
+        if (null === ($archive = $this->modelUtil->findModelInstanceByPk('tl_calendar', $news->pid))) {
             return;
         }
 
@@ -48,7 +65,7 @@ class CalendarEventsContainer
             return $value;
         }
 
-        return System::getContainer()->get('huh.utils.location')->computeCoordinatesInSaveCallback(
+        return $this->locationUtil->computeCoordinatesInSaveCallback(
             $value, $dc
         );
     }

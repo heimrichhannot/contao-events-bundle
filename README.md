@@ -10,7 +10,7 @@ This bundle offers useful functionality concerning the entities `tl_calendar` an
 - adds an `Item` class for the generic reader bundle [heimrichhannot/contao-list-bundle](https://github.com/heimrichhannot/contao-list-bundle) and the generic list bundle [heimrichhannot/contao-list-bundle](https://github.com/heimrichhannot/contao-list-bundle)
 - adds a dateAdded field for `tl_calendar_events`
 - adds the `feature` operation to `tl_calendar_events` (and `tl_calendar_sub_events` if used) as already existing in `tl_news`
-- adds some new fields
+- adds some new fields (see below)
 
 ## Installation
 
@@ -23,7 +23,7 @@ Install via composer: `composer require heimrichhannot/contao-events-bundle` and
 You can activate sub events in the global Contao settings. Here you have the following 2 options. Which one you take depends on
 if the sub events can be a separate entity (`tl_calendar_sub_events`) or need to be instances of `tl_calendar_events`.
 
-In both cases, activate the appropriate checkbox in the global contao settings. Afterwards clear the cache and update the database.
+In both cases, activate the appropriate checkbox in the global contao settings. Afterwards **clear the cache** and **update the database**.
 
 #### Realization as an entity "tl_calendar_sub_events"
 
@@ -35,4 +35,13 @@ A new field `parentEVent` is added to `tl_calendar_events`
 
 ### New fields
 
+- dateAdded (auto-generated)
+- website
+- coordinates
+- city
+- postal
+- street
+- locationAdditional
+- shortTitle
+- featured
 - subTitle
