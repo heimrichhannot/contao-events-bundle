@@ -11,7 +11,11 @@ System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::
 /*
  * Hooks
  */
-$GLOBALS['TL_HOOKS']['executePreActions']['events-bundle'] = ['huh.events.event_listener.hook.hook_listener', 'executePreActions'];
+$GLOBALS['TL_HOOKS']['executePreActions']['events-bundle'] = [
+    \HeimrichHannot\EventsBundle\EventListener\Hook\HookListener::class,
+    'executePreActions'
+];
+
 $GLOBALS['TL_HOOKS']['loadDataContainer']['huh_events'] = [
     \HeimrichHannot\EventsBundle\EventListener\LoadDataContainerListener::class,
     'onLoadDataContainer',

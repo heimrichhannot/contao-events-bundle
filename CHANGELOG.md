@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.4] - 2021-04-19
+
+- fixed contao 4.9 issue
+
 ## [1.5.3] - 2021-04-14
 
 - refactoring for upcoming symfony versions
