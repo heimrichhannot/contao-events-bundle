@@ -50,6 +50,8 @@ class EventsManager
                     'tables' => ['tl_calendar_sub_events', 'tl_content'],
                 ];
 
+                $GLOBALS['BE_MOD']['content']['calendar']['tables'][] = 'tl_calendar_sub_events';
+
                 break;
         }
     }
@@ -80,32 +82,34 @@ class EventsManager
         unset($dca['list']['operations']['subevents']);
 
         $dca['list']['operations']['edit']['href'] = 'do=calendar_subevents&table=tl_content';
-        $dca['list']['operations']['toggle']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'toggleIcon'];
-        $dca['list']['operations']['feature']['button_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'iconFeatured'];
-        $dca['list']['sorting']['child_record_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'listEvents'];
+        $dca['list']['operations']['toggle']['button_callback'] = [CalendarSubEventsListener::class, 'toggleIcon'];
+        $dca['list']['operations']['feature']['button_callback'] = [CalendarSubEventsListener::class, 'iconFeatured'];
+        $dca['list']['sorting']['child_record_callback'] = [CalendarSubEventsListener::class, 'listEvents'];
 
         /*
          * Callbacks
          */
         // Reset callbacks to core default
         $dca['config']['onload_callback'] = [
-            ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'checkPermission'],
+            [CalendarSubEventsListener::class, 'checkPermission'],
         ];
 
         $dca['config']['onsubmit_callback'] = [
-            ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'adjustTime'],
+            [CalendarSubEventsListener::class, 'adjustTime'],
         ];
 
         /*
          * Fields
          */
         $dca['fields']['pid']['foreignKey'] = 'tl_calendar_events.title';
-        $dca['fields']['alias']['save_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'generateAlias']];
-        $dca['fields']['startTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
-        $dca['fields']['endTime']['load_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'loadTime']];
-        $dca['fields']['endTime']['save_callback'] = [['huh.events.event_listener.data_container.calendar_sub_events_listener', 'setEmptyEndTime']];
-        $dca['fields']['source']['options_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'getSourceOptions'];
-        $dca['fields']['articleId']['options_callback'] = ['huh.events.event_listener.data_container.calendar_sub_events_listener', 'getArticleAlias'];
+        $dca['fields']['alias']['save_callback'] = [[CalendarSubEventsListener::class, 'generateAlias']];
+        $dca['fields']['startTime']['load_callback'] = [[CalendarSubEventsListener::class, 'loadTime']];
+        $dca['fields']['endTime']['load_callback'] = [[CalendarSubEventsListener::class, 'loadTime']];
+        $dca['fields']['endTime']['save_callback'] = [[CalendarSubEventsListener::class, 'setEmptyEndTime']];
+        $dca['fields']['source']['options_callback'] = [CalendarSubEventsListener::class, 'getSourceOptions'];
+        $dca['fields']['articleId']['options_callback'] = [CalendarSubEventsListener::class, 'getArticleAlias'];
+        $dca['fields']['serpPreview']['eval']['url_callback'] = [CalendarSubEventsListener::class, 'getSerpUrl'];
+        $dca['fields']['serpPreview']['eval']['title_tag_callback'] = [CalendarSubEventsListener::class, 'getTitleTag'];
     }
 
     public function initCalendarEventsDcaForSubEvents()

@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2021-07-05
+
+- fixed contao 4.9 issue for entity mode
+- minor refactoring
+
 ## [1.5.4] - 2021-04-19
 
 - fixed contao 4.9 issue

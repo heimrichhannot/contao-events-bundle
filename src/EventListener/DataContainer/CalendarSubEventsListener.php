@@ -16,12 +16,17 @@ use Contao\CoreBundle\Exception\AccessDeniedException;
 use Contao\Database;
 use Contao\DataContainer;
 use Contao\Date;
+use Contao\Events;
 use Contao\Image;
 use Contao\Input;
+use Contao\LayoutModel;
+use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
 use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
+use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 class CalendarSubEventsListener
 {
@@ -31,10 +36,12 @@ class CalendarSubEventsListener
      * @var ContainerUtil
      */
     protected $containerUtil;
+    protected ModelUtil $modelUtil;
 
-    public function __construct(ContainerUtil $containerUtil)
+    public function __construct(ContainerUtil $containerUtil, ModelUtil $modelUtil)
     {
         $this->containerUtil = $containerUtil;
+        $this->modelUtil = $modelUtil;
     }
 
     /**
@@ -70,6 +77,51 @@ class CalendarSubEventsListener
         }
 
         return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
+    }
+
+    /**
+     * Return the SERP URL.
+     *
+     * @return string
+     */
+    public function getSerpUrl(CalendarSubEventsModel $model)
+    {
+        return Events::generateEventUrl($model, true);
+    }
+
+    /**
+     * Return the title tag from the associated page layout.
+     *
+     * @return string
+     */
+    public function getTitleTag(CalendarSubEventsModel $model)
+    {
+        if (null === ($event = $this->modelUtil->findModelInstanceByPk('tl_calendar', $model->pid))) {
+            return '';
+        }
+
+        if (null === ($calendar = $this->modelUtil->findModelInstanceByPk('tl_calendar', $event->pid))) {
+            return '';
+        }
+
+        /** @var PageModel $page */
+        if (!$page = $calendar->getRelated('jumpTo')) {
+            return '';
+        }
+
+        $page->loadDetails();
+
+        /** @var LayoutModel $layout */
+        if (!$layout = $page->getRelated('layout')) {
+            return '';
+        }
+
+        global $objPage;
+
+        // Set the global page object so we can replace the insert tags
+        $objPage = $page;
+
+        return Controller::replaceInsertTags(str_replace('{{page::pageTitle}}', '%s', $layout->titleTag ?: '{{page::pageTitle}} - {{page::rootPageTitle}}'));
     }
 
     /**
