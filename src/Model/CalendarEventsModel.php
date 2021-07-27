@@ -10,8 +10,10 @@ namespace HeimrichHannot\EventsBundle\Model;
 
 use Contao\Config;
 use Contao\System;
+use HeimrichHannot\EventsBundle\Event\BeforeGetSubEventsEvent;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
 use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class CalendarEventsModel extends \Contao\CalendarEventsModel
 {
@@ -28,7 +30,7 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
      *
      * @return mixed
      */
-    public static function getSubEvents(int $event, array $options = [])
+    public static function getSubEvents(int $eventId, array $options = [])
     {
         if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
             $table = 'tl_calendar_sub_events';
@@ -40,8 +42,13 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
             return null;
         }
 
+        $eventDispatcher = System::getContainer()->get(EventDispatcher::class);
+
+        /** @var BeforeGetSubEventsEvent $event */
+        $event = $eventDispatcher->dispatch(BeforeGetSubEventsEvent::NAME, new BeforeGetSubEventsEvent([$parentProperty.'=?'], [$eventId]));
+
         return System::getContainer()->get(ModelUtil::class)->findModelInstancesBy(
-            $table, [$parentProperty.'=?'], [$event], $options
+            $table, $event->getColumns(), $event->getValues(), $options
         );
     }
 
