@@ -36,7 +36,10 @@ class CalendarSubEventsListener
      * @var ContainerUtil
      */
     protected $containerUtil;
-    protected ModelUtil $modelUtil;
+    /**
+     * @var ModelUtil
+     */
+    protected $modelUtil;
 
     public function __construct(ContainerUtil $containerUtil, ModelUtil $modelUtil)
     {

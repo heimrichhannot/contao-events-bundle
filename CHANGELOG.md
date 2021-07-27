@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2021-07-27
+
+- fixed type declaration for lower php versions
+
 ## [1.6.0] - 2021-07-05
 
 - fixed contao 4.9 issue for entity mode
