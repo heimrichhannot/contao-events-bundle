@@ -253,9 +253,9 @@ class EventsManager
             return null;
         }
 
-        $event = $this->eventDispatcher->dispatch(BeforeGetSubEventsEvent::NAME, new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options));
+        $event = $this->eventDispatcher->dispatch(BeforeGetSubEventsEvent::class, new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options));
 
-        return System::getContainer()->get(ModelUtil::class)->findModelInstancesBy(
+        return $this->modelUtil->findModelInstancesBy(
             $event->getTable(), $event->getColumns(), $event->getValues(), $event->getOptions()
         );
     }

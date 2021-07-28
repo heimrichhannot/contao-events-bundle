@@ -12,7 +12,6 @@ use Symfony\Component\EventDispatcher\Event;
 
 class BeforeGetSubEventsEvent extends Event
 {
-    public const NAME = 'huh.events.before_get_sub_events';
     /**
      * @var string
      */
