@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2021-07-28
+
+- deprecated CalendarEventsModel::getSubEvents and CalendarEventsModel::hasSubEvents (#6)
+- added getSubEvents and hasSubEvents to EventsManager
+
 ## [1.6.1] - 2021-07-27
 
 - fixed type declaration for lower php versions
