@@ -8,41 +8,34 @@
 
 namespace HeimrichHannot\EventsBundle\Model;
 
-use Contao\Config;
 use Contao\System;
-use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
+use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 class CalendarEventsModel extends \Contao\CalendarEventsModel
 {
     /**
      * Checks a given event has sub events.
+     *
+     * @deprecated Deprecated since 1.7.0, to be removed in 2.0.
+     *             Use EventsManager::hasSubEvents instead.
      */
     public static function hasSubEvents(int $event): bool
     {
-        return null !== static::getSubEvents($event);
+        return null !== System::getContainer()->get(EventsManager::class)->getSubEvents($event);
     }
 
     /**
      * Retrieves the sub events for a given event.
      *
      * @return mixed
+     *
+     * @deprecated Deprecated since Contao 1.7.0, to be removed in 2.0.
+     *             Use EventsManager::getSubEvents instead.
      */
     public static function getSubEvents(int $event, array $options = [])
     {
-        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
-            $table = 'tl_calendar_sub_events';
-            $parentProperty = 'tl_calendar_events.pid';
-        } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
-            $table = 'tl_calendar_events';
-            $parentProperty = 'tl_calendar_events.parentEvent';
-        } else {
-            return null;
-        }
-
-        return System::getContainer()->get(ModelUtil::class)->findModelInstancesBy(
-            $table, [$parentProperty.'=?'], [$event], $options
-        );
+        return System::getContainer()->get(EventsManager::class)->getSubEvents($event, $options);
     }
 
     public static function findPublishedByIdOrAlias($varId, array $options = [])

@@ -12,10 +12,12 @@ use Contao\Config;
 use Contao\Controller;
 use Contao\DataContainer;
 use Contao\System;
+use HeimrichHannot\EventsBundle\Event\BeforeGetSubEventsEvent;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
 use HeimrichHannot\UtilsBundle\Arrays\ArrayUtil;
 use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class EventsManager
 {
@@ -27,11 +29,16 @@ class EventsManager
      * @var ArrayUtil
      */
     protected $arrayUtil;
+    /**
+     * @var EventDispatcherInterface
+     */
+    protected $eventDispatcher;
 
-    public function __construct(ModelUtil $modelUtil, ArrayUtil $arrayUtil)
+    public function __construct(ModelUtil $modelUtil, ArrayUtil $arrayUtil, EventDispatcherInterface $eventDispatcher)
     {
         $this->modelUtil = $modelUtil;
         $this->arrayUtil = $arrayUtil;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function initCalendarSubEventsConfig()
@@ -219,5 +226,37 @@ class EventsManager
 
             $dca['fields']['alias']['eval']['tl_class'] = 'w50';
         }
+    }
+
+    /**
+     * Checks a given event has sub events.
+     */
+    public function hasSubEvents(int $eventId): bool
+    {
+        return null !== $this->getSubEvents($eventId);
+    }
+
+    /**
+     * Retrieves the sub events for a given event.
+     *
+     * @return mixed
+     */
+    public function getSubEvents(int $eventId, array $options = [])
+    {
+        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
+            $table = 'tl_calendar_sub_events';
+            $parentProperty = 'tl_calendar_events.pid';
+        } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
+            $table = 'tl_calendar_events';
+            $parentProperty = 'tl_calendar_events.parentEvent';
+        } else {
+            return null;
+        }
+
+        $event = $this->eventDispatcher->dispatch(BeforeGetSubEventsEvent::class, new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options));
+
+        return $this->modelUtil->findModelInstancesBy(
+            $event->getTable(), $event->getColumns(), $event->getValues(), $event->getOptions()
+        );
     }
 }
