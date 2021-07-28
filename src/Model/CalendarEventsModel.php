@@ -17,6 +17,9 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
 {
     /**
      * Checks a given event has sub events.
+     *
+     * @deprecated Deprecated since 1.7.0, to be removed in 2.0.
+     *             Use EventsManager::hasSubEvents instead.
      */
     public static function hasSubEvents(int $event): bool
     {
@@ -27,6 +30,9 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
      * Retrieves the sub events for a given event.
      *
      * @return mixed
+     *
+     * @deprecated Deprecated since Contao 1.7.0, to be removed in 2.0.
+     *             Use EventsManager::getSubEvents instead.
      */
     public static function getSubEvents(int $event, array $options = [])
     {

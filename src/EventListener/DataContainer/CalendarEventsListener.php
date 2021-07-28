@@ -19,6 +19,7 @@ use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
 use HeimrichHannot\UtilsBundle\Date\DateUtil;
@@ -47,14 +48,19 @@ class CalendarEventsListener
      * @var ContaoFrameworkInterface
      */
     protected $framework;
+    /**
+     * @var EventsManager
+     */
+    protected $eventsManager;
 
-    public function __construct(ContaoFrameworkInterface $framework, DateUtil $dateUtil, DcaUtil $dcaUtil, ContainerUtil $containerUtil, ModelUtil $modelUtil)
+    public function __construct(ContaoFrameworkInterface $framework, DateUtil $dateUtil, DcaUtil $dcaUtil, ContainerUtil $containerUtil, ModelUtil $modelUtil, EventsManager $eventsManager)
     {
         $this->framework = $framework;
         $this->dateUtil = $dateUtil;
         $this->dcaUtil = $dcaUtil;
         $this->containerUtil = $containerUtil;
         $this->modelUtil = $modelUtil;
+        $this->eventsManager = $eventsManager;
     }
 
     public function listEvents($row)
@@ -77,24 +83,21 @@ class CalendarEventsListener
         // retrieve sub events
         $subEvents = '';
 
-        /* @var CalendarEventsModel $adapter */
-        if (null !== ($adapter = $this->framework->getAdapter(CalendarEventsModel::class))) {
-            if (null !== ($events = $adapter->getSubEvents($id))) {
-                while ($events->next()) {
-                    $subEventRow = $events->row();
+        if (null !== ($events = $this->eventsManager->getSubEvents($id))) {
+            while ($events->next()) {
+                $subEventRow = $events->row();
 
-                    $date = $this->dateUtil->getFormattedDateTimeByEvent($events->current());
+                $date = $this->dateUtil->getFormattedDateTimeByEvent($events->current());
 
-                    $subEvents .= System::getContainer()->get('twig')->render(
-                        '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
-                            'row' => $subEventRow,
-                            'date' => $date,
-                            'operations' => $this->dcaUtil->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
-                                'skipOperations' => ['cut', 'copy'],
-                            ]),
-                        ]
-                    );
-                }
+                $subEvents .= System::getContainer()->get('twig')->render(
+                    '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
+                        'row' => $subEventRow,
+                        'date' => $date,
+                        'operations' => $this->dcaUtil->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
+                            'skipOperations' => ['cut', 'copy'],
+                        ]),
+                    ]
+                );
             }
         }
 
@@ -108,7 +111,7 @@ class CalendarEventsListener
             return;
         }
 
-        if ($adapter->hasSubEvents((int) ($dc->id))) {
+        if ($this->eventsManager->hasSubEvents((int) ($dc->id))) {
             $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
             unset($dca['fields']['parentEvent']);
