@@ -13,11 +13,13 @@ class BeforeGetSubEventsEvent
     public const NAME = 'huh.events.before_get_sub_events_event';
     protected $columns;
     protected $values;
+    protected $options;
 
-    public function __construct(array $columns, array $values)
+    public function __construct(array $columns, array $values, array $options)
     {
         $this->columns = $columns;
         $this->values = $values;
+        $this->options = $options;
     }
 
     public function getColumns(): array
@@ -38,5 +40,15 @@ class BeforeGetSubEventsEvent
     public function setValues(array $values): void
     {
         $this->values = $values;
+    }
+
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    public function setOptions(array $options): void
+    {
+        $this->options = $options;
     }
 }

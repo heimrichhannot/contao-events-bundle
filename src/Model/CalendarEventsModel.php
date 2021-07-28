@@ -45,10 +45,10 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
         $eventDispatcher = System::getContainer()->get(EventDispatcher::class);
 
         /** @var BeforeGetSubEventsEvent $event */
-        $event = $eventDispatcher->dispatch(BeforeGetSubEventsEvent::NAME, new BeforeGetSubEventsEvent([$parentProperty.'=?'], [$eventId]));
+        $event = $eventDispatcher->dispatch(BeforeGetSubEventsEvent::NAME, new BeforeGetSubEventsEvent([$parentProperty.'=?'], [$eventId], $options));
 
         return System::getContainer()->get(ModelUtil::class)->findModelInstancesBy(
-            $table, $event->getColumns(), $event->getValues(), $options
+            $table, $event->getColumns(), $event->getValues(), $event->getOptions()
         );
     }
 
