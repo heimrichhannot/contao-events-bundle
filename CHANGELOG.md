@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1] - 2021-12-21
+- Fixed: issues with palette manipulation on tl_calender_events
+- Fixed: missing contao/calendar-bundle dependency
+
 ## [1.7.0] - 2021-07-28
 
 - deprecated CalendarEventsModel::getSubEvents and CalendarEventsModel::hasSubEvents (#6)
