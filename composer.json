@@ -4,7 +4,7 @@
   "description": "This bundle offers useful functionality concerning the entities \"tl_calendar\" and \"tl_calendar_events\" of the Contao CMS.",
   "license": "LGPL-3.0-or-later",
   "require": {
-    "php": "^7.1",
+    "php": "^7.1 || ^8.0",
     "contao/core-bundle": "^4.4",
     "contao/calendar-bundle": "^4.4",
     "heimrichhannot/contao-utils-bundle": "^2.179"
