@@ -6,21 +6,25 @@
  * @license LGPL-3.0-or-later
  */
 
+use Contao\CoreBundle\Util\PackageUtil;
+
 $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
 System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarEventsDcaForSubEvents();
 
-System::getContainer()->get(\HeimrichHannot\UtilsBundle\Arrays\ArrayUtil::class)->insertInArrayByName(
-    $dca['list']['operations'],
-    'show', [
-    'feature' => [
-        'label'           => &$GLOBALS['TL_LANG']['tl_calendar_events']['feature'],
-        'icon'            => 'featured.svg',
-        'attributes'      => 'onclick="Backend.getScrollOffset();return AjaxRequest.toggleFeatured(this,%s)"',
-        'button_callback' => [\HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener::class, 'iconFeatured'],
-    ],
-], 0
-);
+if (version_compare(PackageUtil::getContaoVersion(), '4.10', '<')) {
+    System::getContainer()->get(\HeimrichHannot\UtilsBundle\Arrays\ArrayUtil::class)->insertInArrayByName(
+        $dca['list']['operations'],
+        'show', [
+        'feature' => [
+            'label'           => &$GLOBALS['TL_LANG']['tl_calendar_events']['feature'],
+            'icon'            => 'featured.svg',
+            'attributes'      => 'onclick="Backend.getScrollOffset();return AjaxRequest.toggleFeatured(this,%s)"',
+            'button_callback' => [\HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener::class, 'iconFeatured'],
+        ],
+    ], 0
+    );
+}
 
 /*
  * Callbacks
@@ -53,7 +57,7 @@ $fields = [
         'exclude'   => true,
         'filter'    => true,
         'inputType' => 'checkbox',
-        'eval'      => ['tl_class' => 'w50'],
+        'eval'      => ['tl_class' => 'w50 m12'],
         'sql'       => "char(1) NOT NULL default ''",
     ],
     'shortTitle'         => [
