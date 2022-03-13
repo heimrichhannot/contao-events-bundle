@@ -5,6 +5,7 @@ $lang = &$GLOBALS['TL_LANG']['tl_settings'];
 /**
  * Fields
  */
+$lang['subEventMode'] = [];
 $lang['subEventMode'][0] = 'Mode for sub events';
 $lang['subEventMode'][1] = 'Choose here how sub events should be realized.';
 

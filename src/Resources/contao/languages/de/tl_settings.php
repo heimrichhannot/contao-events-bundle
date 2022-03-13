@@ -5,8 +5,10 @@ $lang = &$GLOBALS['TL_LANG']['tl_settings'];
 /**
  * Fields
  */
+$lang['subEventMode'] = [];
 $lang['subEventMode'][0]                         = 'Modus für Unterveranstaltungen';
 $lang['subEventMode'][1]                         = 'Wählen Sie hier aus, wie Unterveranstaltungen umgesetzt werden sollen.';
+$lang['skipCalendarEventCoordinateRetrieval'] = [];
 $lang['skipCalendarEventCoordinateRetrieval'][0] = 'Koordinaten nicht automatisch berechnen';
 $lang['skipCalendarEventCoordinateRetrieval'][1] = 'Wählen Sie diese Option, wenn die Koordinaten nicht durch Nutzung der Google GeoCode API automatisch berechnet werden sollen (dafür ist ein API-Schlüssel nötig!).';
 
