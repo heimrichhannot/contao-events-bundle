@@ -9,6 +9,7 @@
 namespace HeimrichHannot\EventsBundle\EventListener;
 
 use Contao\CoreBundle\DataContainer\PaletteManipulator;
+use Contao\CoreBundle\Util\PackageUtil;
 
 class LoadDataContainerListener
 {
@@ -24,8 +25,12 @@ class LoadDataContainerListener
                 $dca['palettes']['default'] = str_replace(',location', '', $dca['palettes']['default']);
                 $dca['palettes']['default'] = str_replace(',address', '', $dca['palettes']['default']);
 
-                (new PaletteManipulator())
-                    ->addField('featured', 'noComments', PaletteManipulator::POSITION_AFTER)
+                $paletteManipulator = new PaletteManipulator();
+                if (version_compare(PackageUtil::getContaoVersion(), '4.10', '<')) {
+                    $paletteManipulator
+                        ->addField('featured', 'noComments', PaletteManipulator::POSITION_AFTER);
+                }
+                $paletteManipulator
                         ->addField('shortTitle', 'alias', PaletteManipulator::POSITION_AFTER)
                         ->addField('subTitle', 'alias', PaletteManipulator::POSITION_AFTER)
                     ->addLegend('location_legend', 'details_legend')
