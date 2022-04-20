@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2022-04-20
+- Changed: allow php 8 ([#9], [@rabauss])
+- Fixed: contao 4.10+ support ([#9], [@rabauss])
+
 ## [1.7.1] - 2021-12-21
 - Fixed: issues with palette manipulation on tl_calender_events
 - Fixed: missing contao/calendar-bundle dependency
@@ -84,3 +88,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - initial state
+
+[@rabauss]: https://github.com/rabauss
+
+[#9]: https://github.com/heimrichhannot/contao-events-bundle/pull/9
+
