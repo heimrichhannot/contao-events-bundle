@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2021 Heimrich & Hannot GmbH
+ * Copyright (c) 2022 Heimrich & Hannot GmbH
  *
  * @license LGPL-3.0-or-later
  */
@@ -14,19 +14,19 @@ use Contao\CoreBundle\Util\PackageUtil;
 class LoadDataContainerListener
 {
     /**
-     * Hook("loadDataContainer")
+     * Hook("loadDataContainer").
      */
     public function onLoadDataContainer(string $table): void
     {
         if ('tl_calendar_events' === $table) {
             if (!class_exists('HeimrichHannot\CalendarPlus\EventsPlus')) {
-
                 $dca = &$GLOBALS['TL_DCA'][$table];
                 $dca['palettes']['default'] = str_replace(',location', '', $dca['palettes']['default']);
                 $dca['palettes']['default'] = str_replace(',address', '', $dca['palettes']['default']);
 
                 $paletteManipulator = new PaletteManipulator();
-                if (version_compare(PackageUtil::getContaoVersion(), '4.10', '<')) {
+
+                if (!class_exists(PackageUtil::class) || version_compare(PackageUtil::getContaoVersion(), '4.10', '<')) {
                     $paletteManipulator
                         ->addField('featured', 'noComments', PaletteManipulator::POSITION_AFTER);
                 }

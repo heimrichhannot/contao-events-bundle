@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.1] - 2022-04-27
+- Fixed: contao 4.4 compatibility
+
 ## [1.8.0] - 2022-04-20
 - Changed: allow php 8 ([#9], [@rabauss])
 - Fixed: contao 4.10+ support ([#9], [@rabauss])
