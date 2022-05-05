@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (c) 2021 Heimrich & Hannot GmbH
+ * Copyright (c) 2022 Heimrich & Hannot GmbH
  *
  * @license LGPL-3.0-or-later
  */
@@ -201,7 +201,7 @@ class EventsManager
                     'filter' => true,
                     'default' => \Input::get('parentEvent') ?: 0,
                     'inputType' => 'select',
-                    'options_callback' => function (\Contao\DataContainer $dc) {
+                    'options_callback' => function (DataContainer $dc) {
                         $options = [];
 
                         // only allow events which are neither children nor parents
@@ -253,7 +253,10 @@ class EventsManager
             return null;
         }
 
-        $event = $this->eventDispatcher->dispatch(BeforeGetSubEventsEvent::class, new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options));
+        $event = $this->eventDispatcher->dispatch(
+            new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options),
+            BeforeGetSubEventsEvent::class
+        );
 
         return $this->modelUtil->findModelInstancesBy(
             $event->getTable(), $event->getColumns(), $event->getValues(), $event->getOptions()
