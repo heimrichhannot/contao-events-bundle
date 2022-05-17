@@ -70,6 +70,17 @@ class LoadDataContainerListener
                 ], 'feature'
                 );
             }
+
+            if (!\array_key_exists('featured', $dca['fields'])) {
+                $dca['fields']['featured'] = [
+                    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['featured'],
+                    'exclude' => true,
+                    'filter' => true,
+                    'inputType' => 'checkbox',
+                    'eval' => ['tl_class' => 'w50 m12'],
+                    'sql' => "char(1) NOT NULL default ''",
+                ];
+            }
         }
     }
 }

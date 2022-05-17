@@ -11,6 +11,7 @@ This bundle offers useful functionality concerning the entities `tl_calendar` an
 - adds a dateAdded field for `tl_calendar_events`
 - adds the `feature` operation to `tl_calendar_events` (and `tl_calendar_sub_events` if used) as already existing in `tl_news`
 - adds some new fields (see below)
+- Calendar event coordinates
 
 ## Installation
 
@@ -32,6 +33,10 @@ The `tl_calendar_sub_events` dca is created by copying the dca of `tl_calendar_e
 #### Realization using a parent-child-relation
 
 A new field `parentEVent` is added to `tl_calendar_events`
+
+### Coordinates
+
+Can be disabled in settings.
 
 ### New fields
 

@@ -36,14 +36,6 @@ $fields = [
         'eval' => ['maxlength' => 255, 'tl_class' => 'w50'],
         'sql' => "varchar(255) NOT NULL default ''",
     ],
-    'featured' => [
-        'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['featured'],
-        'exclude' => true,
-        'filter' => true,
-        'inputType' => 'checkbox',
-        'eval' => ['tl_class' => 'w50 m12'],
-        'sql' => "char(1) NOT NULL default ''",
-    ],
     'shortTitle' => [
         'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['shortTitle'],
         'inputType' => 'text',
