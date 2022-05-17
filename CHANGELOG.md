@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2022-05-17
+- Changed: small refactoring
+
 ## [1.9.0] - 2022-05-05
 - Changed: dropped contao 4.4 and symfony 3 support
 - Fixed: symfony 5 support

@@ -10,17 +10,29 @@ namespace HeimrichHannot\EventsBundle\EventListener;
 
 use Contao\CoreBundle\DataContainer\PaletteManipulator;
 use Contao\CoreBundle\Util\PackageUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class LoadDataContainerListener
 {
+    /**
+     * @var Utils
+     */
+    private $utils;
+
+    public function __construct(Utils $utils)
+    {
+        $this->utils = $utils;
+    }
+
     /**
      * Hook("loadDataContainer").
      */
     public function onLoadDataContainer(string $table): void
     {
         if ('tl_calendar_events' === $table) {
+            $dca = &$GLOBALS['TL_DCA'][$table];
+
             if (!class_exists('HeimrichHannot\CalendarPlus\EventsPlus')) {
-                $dca = &$GLOBALS['TL_DCA'][$table];
                 $dca['palettes']['default'] = str_replace(',location', '', $dca['palettes']['default']);
                 $dca['palettes']['default'] = str_replace(',address', '', $dca['palettes']['default']);
 
@@ -43,6 +55,20 @@ class LoadDataContainerListener
                     ->addLegend('contact_legend', 'location_legend')
                         ->addField('website', 'contact_legend', PaletteManipulator::POSITION_APPEND)
                     ->applyToPalette('default', 'tl_calendar_events');
+            }
+
+            if (!\array_key_exists('feature', $dca['list']['operations'])) {
+                $this->utils->array()->insertAfterKey(
+                    $dca['list']['operations'],
+                    'show', [
+                    [
+                        'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['feature'],
+                        'icon' => 'featured.svg',
+                        'attributes' => 'onclick="Backend.getScrollOffset();return AjaxRequest.toggleFeatured(this,%s)"',
+                        'button_callback' => [\HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener::class, 'iconFeatured'],
+                    ],
+                ], 'feature'
+                );
             }
         }
     }
