@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.2] - 2022-05-17
+- Fixed: utils bundle dependency
+
 ## [1.9.1] - 2022-05-17
 - Fixed: issues with contao 4.13
 
