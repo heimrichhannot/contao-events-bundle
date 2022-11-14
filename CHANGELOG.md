@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.3] - 2022-11-14
+- Fixed: removed usage of non existing method
+
 ## [1.9.2] - 2022-05-17
 - Fixed: utils bundle dependency
 
