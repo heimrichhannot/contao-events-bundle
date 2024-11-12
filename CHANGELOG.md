@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.4] - 2024-11-12
+- Fixed: skip adding meta tags when head bundle is not installed
+- Fixed: do not use invalid insert tag in meta tags
+
 ## [1.9.3] - 2022-11-14
 - Fixed: removed usage of non existing method
 

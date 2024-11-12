@@ -15,6 +15,8 @@ use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Validator;
+use HeimrichHannot\HeadBundle\HeimrichHannotContaoHeadBundle;
+use HeimrichHannot\ReaderBundle\EventListener\HeadBundleListener;
 use HeimrichHannot\ReaderBundle\Item\DefaultItem;
 use HeimrichHannot\UtilsBundle\File\FileUtil;
 
@@ -44,13 +46,16 @@ class DefaultReaderItem extends DefaultItem
             $image = System::getContainer()->get(FileUtil::class)->getPathFromUuid($image);
         }
 
+        if (!class_exists(HeimrichHannotContaoHeadBundle::class)) {
+            return;
+        }
+
         $container->get('huh.head.tag.meta_robots')->setContent($article['robots'] ?: ($objPage->robots ?: 'index,follow'));
         $container->get('huh.head.tag.meta_date')->setContent(Date::parse('c', $article['date']));
         $container->get('huh.head.tag.og_site_name')->setContent($objPage->rootPageTitle);
         $container->get('huh.head.tag.og_locale')->setContent($container->get('request_stack')->getCurrentRequest()->getLocale());
         $container->get('huh.head.tag.og_type')->setContent('article');
         $container->get('huh.head.tag.og_title')->setContent(StringUtil::stripInsertTags($article['title']));
-        $container->get('huh.head.tag.og_url')->setContent('{{event_category_url::'.$article['id'].'}}');
         $container->get('huh.head.tag.og_description')->setContent(str_replace("\n", ' ', strip_tags(Controller::replaceInsertTags($article['teaser']))));
 
         if ($article['addImage']) {
