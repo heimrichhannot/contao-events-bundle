@@ -9,35 +9,29 @@
 namespace HeimrichHannot\EventsBundle\DataContainer;
 
 use Contao\Config;
+use Contao\CoreBundle\DependencyInjection\Attribute\AsCallback;
 use Contao\DataContainer;
 use Contao\System;
+use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
+use HeimrichHannot\EventsBundle\Model\CalendarModel;
 use HeimrichHannot\UtilsBundle\Location\LocationUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
-class CalendarEventsContainer
+readonly class CalendarEventsContainer
 {
-    /**
-     * @var ModelUtil
-     */
-    protected $modelUtil;
-    /**
-     * @var LocationUtil
-     */
-    protected $locationUtil;
+    public const TABLE = 'tl_calendar_events';
 
-    public function __construct(ModelUtil $modelUtil, LocationUtil $locationUtil)
-    {
-        $this->modelUtil = $modelUtil;
-        $this->locationUtil = $locationUtil;
-    }
+    public function __construct(private LocationUtil $locationUtil, private Utils $utils) {}
 
     public function modifyPalette(DataContainer $dc): void
     {
-        if (null === ($news = $this->modelUtil->findModelInstanceByPk('tl_calendar_events', $dc->id))) {
+        /** @var $news CalendarEventsModel */
+        if (!$news = $this->utils->model()->findModelInstanceByPk(static::TABLE, $dc->id)) {
             return;
         }
 
-        if (null === ($archive = $this->modelUtil->findModelInstanceByPk('tl_calendar', $news->pid))) {
+        /** @var $archive CalendarModel */
+        if (!$archive = $this->utils->model()->findModelInstanceByPk('tl_calendar', $news->pid)) {
             return;
         }
 
@@ -45,28 +39,28 @@ class CalendarEventsContainer
             return;
         }
 
-        if (!isset($GLOBALS['TL_DCA']['tl_calendar_events']['palettes'][$archive->customEventsPalettes])) {
+        if (!$customPalettes = $GLOBALS['TL_DCA'][static::TABLE]['palettes'][$archive->customEventsPalettes] ?? null) {
             return;
         }
 
-        $GLOBALS['TL_DCA']['tl_calendar_events']['palettes']['default'] = $GLOBALS['TL_DCA']['tl_calendar_events']['palettes'][$archive->customEventsPalettes];
+        $GLOBALS['TL_DCA'][static::TABLE]['palettes']['default'] = $customPalettes;
 
-        // HOOK: loadDataContainer must be triggerd after onload_callback, otherwise slick slider wont work anymore
-        if (isset($GLOBALS['TL_HOOKS']['loadDataContainer']) && \is_array($GLOBALS['TL_HOOKS']['loadDataContainer'])) {
+        // HOOK: loadDataContainer must be triggered after onload_callback, otherwise slick slider stops working
+        if (isset($GLOBALS['TL_HOOKS']['loadDataContainer']) && \is_array($GLOBALS['TL_HOOKS']['loadDataContainer']))
+        {
             foreach ($GLOBALS['TL_HOOKS']['loadDataContainer'] as $callback) {
                 System::importStatic($callback[0])->{$callback[1]}($dc->table);
             }
         }
     }
 
+    #[AsCallback(self::TABLE, 'fields.coordinates.save')]
     public function onSaveCoordinates($value, ?DataContainer $dc): string
     {
         if (Config::get('skipCalendarEventCoordinateRetrieval')) {
             return $value;
         }
 
-        return $this->locationUtil->computeCoordinatesInSaveCallback(
-            $value, $dc
-        );
+        return $this->locationUtil->computeCoordinatesInSaveCallback($value, $dc);
     }
 }

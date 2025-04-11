@@ -1,40 +1,44 @@
 <?php
 
 /*
- * Copyright (c) 2021 Heimrich & Hannot GmbH
- *
+ * @copyright Heimrich & Hannot GmbH, 2025
  * @license LGPL-3.0-or-later
  */
 
 namespace HeimrichHannot\EventsBundle\DataContainer;
 
+use Contao\Controller;
+use Contao\CoreBundle\DependencyInjection\Attribute\AsCallback;
+use Contao\CoreBundle\Framework\ContaoFramework;
 use Contao\DataContainer;
-use HeimrichHannot\UtilsBundle\Dca\DcaUtil;
 
-class CalendarContainer
+readonly class CalendarContainer
 {
-    /**
-     * @var DcaUtil
-     */
-    protected $dcaUtil;
+    public const TABLE = 'tl_calendar';
 
-    public function __construct(DcaUtil $dcaUtil)
-    {
-        $this->dcaUtil = $dcaUtil;
-    }
+    public function __construct(private ContaoFramework $framework) {}
 
+    #[AsCallback(self::TABLE, 'fields.customEventsPalettes.options')]
     public function getEventsPalettes(DataContainer $dc): array
     {
-        $options = [];
-        $this->dcaUtil->loadDc('tl_calendar_events');
-        $palettes = $GLOBALS['TL_DCA']['tl_calendar_events']['palettes'];
-
-        if (!\is_array($palettes)) {
-            return $options;
+        $table = 'tl_calendar_events';
+        if (empty($GLOBALS['TL_DCA'][$table])) {
+            /** @var Controller $controller */
+            $controller = $this->framework->getAdapter(Controller::class);
+            $controller->loadDataContainer($table);
         }
 
-        foreach ($palettes as $name => $palette) {
-            if (\in_array($name, ['__selector__', 'internal', 'external', 'default'], true)) {
+        if (!\is_array($palettes = $GLOBALS['TL_DCA'][$table]['palettes'] ?? null)) {
+            return [];
+        }
+
+        $skip = \array_fill_keys(['__selector__', 'internal', 'external', 'default'], true);
+
+        $options = [];
+
+        foreach ($palettes as $name => $palette)
+        {
+            if (isset($skip[$name])) {
                 continue;
             }
             $options[$name] = $name;

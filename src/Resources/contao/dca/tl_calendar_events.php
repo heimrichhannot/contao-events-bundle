@@ -76,7 +76,6 @@ $fields = [
         'inputType' => 'text',
         'exclude' => true,
         'eval' => ['tl_class' => 'w50'],
-        'save_callback' => [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'onSaveCoordinates'],
         'sql' => "varchar(64) NOT NULL default ''",
     ],
     'website' => [

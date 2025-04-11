@@ -17,7 +17,7 @@ use Contao\ManagerPlugin\Config\ConfigPluginInterface;
 use Contao\ManagerPlugin\Config\ContainerBuilder;
 use Contao\ManagerPlugin\Config\ExtensionPluginInterface;
 use HeimrichHannot\EventsBundle\HeimrichHannotContaoEventsBundle;
-use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
+use HeimrichHannot\EventsBundle\Util\ContainerUtil;
 use Symfony\Component\Config\Loader\LoaderInterface;
 
 class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionPluginInterface
@@ -25,7 +25,7 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
     /**
      * {@inheritdoc}
      */
-    public function getBundles(ParserInterface $parser)
+    public function getBundles(ParserInterface $parser): array
     {
         return [
             BundleConfig::create(HeimrichHannotContaoEventsBundle::class)->setLoadAfter([
@@ -35,7 +35,7 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
         ];
     }
 
-    public function registerContainerConfiguration(LoaderInterface $loader, array $managerConfig)
+    public function registerContainerConfiguration(LoaderInterface $loader, array $managerConfig): void
     {
         $loader->load(__DIR__.'/../Resources/config/services.yml');
     }
@@ -43,7 +43,7 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
     /**
      * {@inheritdoc}
      */
-    public function getExtensionConfig($extensionName, array $extensionConfigs, ContainerBuilder $container)
+    public function getExtensionConfig($extensionName, array $extensionConfigs, ContainerBuilder $container): array
     {
         $extensionConfigs = ContainerUtil::mergeConfigFile(
             'huh_list',

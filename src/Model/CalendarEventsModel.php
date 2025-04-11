@@ -8,11 +8,11 @@
 
 namespace HeimrichHannot\EventsBundle\Model;
 
+use Contao\CalendarEventsModel as ContaoCalendarEventsModel;
 use Contao\System;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
-class CalendarEventsModel extends \Contao\CalendarEventsModel
+class CalendarEventsModel extends ContaoCalendarEventsModel
 {
     /**
      * Checks a given event has sub events.
@@ -38,17 +38,19 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
         return System::getContainer()->get(EventsManager::class)->getSubEvents($event, $options);
     }
 
-    public static function findPublishedByIdOrAlias($varId, array $options = [])
+    public static function findPublishedByIdOrAlias(string|int $id_or_alias, array $options = []): ?static
     {
-        $t = static::$strTable;
+        $t = static::getTable();
 
-        $columns = !is_numeric($varId) ? ["$t.alias=?"] : ["$t.id=?"];
+        $id_or_alias = \is_numeric($id_or_alias) ? (int) $id_or_alias : (string) $id_or_alias;
+        $columns = \is_int($id_or_alias) ? ["$t.id=?"] : ["$t.alias=?"];
 
-        if (!static::isPreviewMode($options)) {
+        if (!static::isPreviewMode($options))
+        {
             $time = \Date::floorToMinute();
             $columns[] = "($t.start='' OR $t.start<='$time') AND ($t.stop='' OR $t.stop>'".($time + 60)."') AND $t.published='1'";
         }
 
-        return System::getContainer()->get(ModelUtil::class)->callModelMethod('tl_calendar_events', 'findOneBy', $columns, $varId, $options);
+        return static::findOneBy($columns, $id_or_alias, $options);
     }
 }
