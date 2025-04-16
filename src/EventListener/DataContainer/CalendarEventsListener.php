@@ -11,7 +11,7 @@ namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
 use Contao\BackendUser;
 use Contao\Controller;
 use Contao\CoreBundle\Exception\AccessDeniedException;
-use Contao\CoreBundle\Framework\ContaoFrameworkInterface;
+use Contao\CoreBundle\Framework\ContaoFramework;
 use Contao\Database;
 use Contao\DataContainer;
 use Contao\Image;
@@ -21,84 +21,69 @@ use Contao\System;
 use Contao\Versions;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
+use HeimrichHannot\EventsBundle\Util\Helper;
 use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
 use HeimrichHannot\UtilsBundle\Date\DateUtil;
 use HeimrichHannot\UtilsBundle\Dca\DcaUtil;
 use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class CalendarEventsListener
 {
-    /**
-     * @var DateUtil
-     */
-    protected $dateUtil;
-    /**
-     * @var DcaUtil
-     */
-    protected $dcaUtil;
-    /**
-     * @var ContainerUtil
-     */
-    protected $containerUtil;
-    /**
-     * @var ModelUtil
-     */
-    protected $modelUtil;
-    /**
-     * @var ContaoFrameworkInterface
-     */
-    protected $framework;
-    /**
-     * @var EventsManager
-     */
-    protected $eventsManager;
+    public function __construct(
+        private readonly ContaoFramework $framework,
+        private readonly EventsManager   $eventsManager,
+        private readonly Utils           $utils,
+    ) {}
 
-    public function __construct(ContaoFrameworkInterface $framework, DateUtil $dateUtil, DcaUtil $dcaUtil, ContainerUtil $containerUtil, ModelUtil $modelUtil, EventsManager $eventsManager)
+    public function listEvents(array $row): string
     {
-        $this->framework = $framework;
-        $this->dateUtil = $dateUtil;
-        $this->dcaUtil = $dcaUtil;
-        $this->containerUtil = $containerUtil;
-        $this->modelUtil = $modelUtil;
-        $this->eventsManager = $eventsManager;
+        $date = Helper::getFormattedDateTime(
+            startDate: $row['startDate'],
+            endDate: $row['endDate'],
+            addTime: $row['addTime'],
+            startTime: $row['startTime'],
+            endTime: $row['endTime']
+        );
+
+        return \sprintf(
+            '<div class="tl_content_left">%s <span style="color:#999;padding-left:3px">[%s]</span>%s</div>',
+            $row['title'], $date, $this->getSubEventsForBackendList($row['id'])
+        );
     }
 
-    public function listEvents($row)
-    {
-        $date = $this->dateUtil->getFormattedDateTime(
-            $row['startDate'],
-            $row['endDate'],
-            $row['addTime'],
-            $row['startTime'],
-            $row['endTime']
-            );
-
-        return '<div class="tl_content_left">'.$row['title'].' <span style="color:#999;padding-left:3px">['.$date.']</span>'.
-            $this->getSubEventsForBackendList($row['id'])
-            .'</div>';
-    }
-
-    public function getSubEventsForBackendList(int $id)
+    public function getSubEventsForBackendList(int $id): string
     {
         // retrieve sub events
+        if (!$events = $this->eventsManager->getSubEvents($id)) {
+            return '';
+        }
+
         $subEvents = '';
 
-        if (null !== ($events = $this->eventsManager->getSubEvents($id))) {
-            while ($events->next()) {
-                $subEventRow = $events->row();
+        while ($events->next())
+        {
+            $row = $events->row();
+            $event = $events->current();
 
-                $date = $this->dateUtil->getFormattedDateTimeByEvent($events->current());
+            $fmtDt = Helper::getFormattedDateTime(
+                startDate: $event->startDate,
+                endDate: $event->endDate,
+                addTime: $event->addTime,
+                startTime: $event->startTime,
+                endTime: $event->endTime
+            );
 
-                $subEvents .= System::getContainer()->get('twig')->render(
-                    '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
-                        'row' => $subEventRow,
-                        'date' => $date,
-                        'operations' => $this->dcaUtil->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
-                            'skipOperations' => ['cut', 'copy'],
-                        ]),
-                    ]
-                );
-            }
+            $subEvents .= System::getContainer()->get('twig')->render(
+                '@HeimrichHannotContaoEvents/subevent_dc_default.twig',
+                [
+                    'row' => $row,
+                    'date' => $fmtDt,
+                    'operations' => Helper::generateDcOperationsButtons($row, 'tl_calendar_events', [], [
+                        'skipOperations' => ['cut', 'copy'],
+                    ]),
+                ]
+            );
         }
 
         return $subEvents;

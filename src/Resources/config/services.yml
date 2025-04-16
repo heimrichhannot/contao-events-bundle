@@ -4,4 +4,4 @@ services:
     autowire: true
 
   HeimrichHannot\EventsBundle\:
-    resource: '../../{DataContainer,EventListener,Manager}/*'
+    resource: '../../{DataContainer,EventListener,Manager,Util}/*'

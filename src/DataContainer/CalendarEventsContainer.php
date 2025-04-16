@@ -14,7 +14,7 @@ use Contao\DataContainer;
 use Contao\System;
 use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use HeimrichHannot\EventsBundle\Model\CalendarModel;
-use HeimrichHannot\UtilsBundle\Location\LocationUtil;
+use HeimrichHannot\EventsBundle\Util\LocationUtil;
 use HeimrichHannot\UtilsBundle\Util\Utils;
 
 readonly class CalendarEventsContainer

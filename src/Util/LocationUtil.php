@@ -1,12 +1,11 @@
 <?php
 
 /*
- * Copyright (c) 2021 Heimrich & Hannot GmbH
- *
+ * @copyright Heimrich & Hannot GmbH, 2025
  * @license LGPL-3.0-or-later
  */
 
-namespace HeimrichHannot\UtilsBundle\Location;
+namespace HeimrichHannot\EventsBundle\Util;
 
 use Contao\Config;
 use Contao\DataContainer;
