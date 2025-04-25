@@ -21,6 +21,7 @@ use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use Doctrine\DBAL\Connection;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
 use HeimrichHannot\EventsBundle\Model\CalendarModel;
@@ -35,6 +36,7 @@ readonly class CalendarEventsContainer
     public const TABLE = 'tl_calendar_events';
 
     public function __construct(
+        private Connection             $connection,
         private ContaoCsrfTokenManager $csrfTokenManager,
         private EventsManager          $eventsManager,
         private Helper                 $helper,
@@ -44,9 +46,50 @@ readonly class CalendarEventsContainer
         private Utils                  $utils,
     ) {}
 
-    public function getFeaturedIconTable(): string
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    #[AsCallback(self::TABLE, 'config.onsubmit')]
+    public function onSubmit_dateAdded(DataContainer $dc): void
     {
-        return static::TABLE;
+        if (!$dc->table || !$dc->id) {
+            return;
+        }
+
+        $this->initDateAdded($dc->table, $dc->id);
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    #[AsCallback(self::TABLE, 'config.oncopy')]
+    public function onCopy_dateAdded(int $insertId, DataContainer $dc): void
+    {
+        if (!$dc->table || !$insertId) {
+            return;
+        }
+
+        $this->initDateAdded($dc->table, $insertId);
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    public function initDateAdded(string $table, int $id): void
+    {
+        if (!$table || !$id) {
+            return;
+        }
+
+        if (!$model = $this->utils->model()->findModelInstanceByPk($table, $id)) {
+            return;
+        }
+
+        if ($model->dateAdded) {
+            return;
+        }
+
+        $this->connection->update($table, ['dateAdded' => time()], ['id' => $id]);
     }
 
     /**

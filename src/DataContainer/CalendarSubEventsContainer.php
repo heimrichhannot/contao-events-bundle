@@ -26,6 +26,7 @@ use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use Doctrine\DBAL\Connection;
 use Exception;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
@@ -41,6 +42,7 @@ readonly class CalendarSubEventsContainer extends CalendarEventsContainer
     public const TABLE = 'tl_calendar_sub_events';
 
     public function __construct(
+        Connection             $connection,
         ContaoCsrfTokenManager $csrfTokenManager,
         EventsManager          $eventsManager,
         Helper                 $helper,
@@ -50,19 +52,15 @@ readonly class CalendarSubEventsContainer extends CalendarEventsContainer
         private Utils          $utils,
     ) {
         parent::__construct(
-            $csrfTokenManager,
-            $eventsManager,
-            $helper,
-            $locationUtil,
-            $parameterBag,
-            $requestStack,
-            $utils,
+            connection: $connection,
+            csrfTokenManager: $csrfTokenManager,
+            eventsManager: $eventsManager,
+            helper: $helper,
+            locationUtil: $locationUtil,
+            parameterBag: $parameterBag,
+            requestStack: $requestStack,
+            utils: $utils,
         );
-    }
-
-    public function getFeaturedIconTable(): string
-    {
-        return static::TABLE;
     }
 
     /**
