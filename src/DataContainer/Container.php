@@ -7,11 +7,11 @@ use Contao\DataContainer;
 use Doctrine\DBAL\Connection;
 use HeimrichHannot\UtilsBundle\Util\Utils;
 
-class Container
+readonly class Container
 {
     public function __construct(
-        private readonly Connection $connection,
-        private readonly Utils $utils,
+        private Connection $connection,
+        private Utils      $utils,
     ) {}
 
     /**
