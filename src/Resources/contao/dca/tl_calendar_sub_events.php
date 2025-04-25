@@ -37,22 +37,14 @@ if (SubEventMode::is(SubEventMode::ENTITY))
      * Callbacks
      */
     // Reset callbacks to core default
-    $dca['config']['onload_callback'] = [
-        [CalendarSubEventsContainer::class, 'checkPermission'],
-    ];
-
-    $dca['config']['onsubmit_callback'] = [
-        [CalendarSubEventsContainer::class, 'adjustTime'],
-    ];
+    $dca['config']['onload_callback'] = [[CalendarSubEventsContainer::class, 'checkPermission']];
+    $dca['config']['onsubmit_callback'] = [[CalendarSubEventsContainer::class, 'adjustTime']];
 
     /*
      * Fields
      */
     $dca['fields']['pid']['foreignKey'] = 'tl_calendar_events.title';
-    $dca['fields']['alias']['save_callback'] = [[CalendarSubEventsContainer::class, 'generateAlias']];
-    $dca['fields']['startTime']['load_callback'] = [[CalendarSubEventsContainer::class, 'loadTime']];
-    $dca['fields']['endTime']['load_callback'] = [[CalendarSubEventsContainer::class, 'loadTime']];
-    $dca['fields']['endTime']['save_callback'] = [[CalendarSubEventsContainer::class, 'setEmptyEndTime']];
+    $dca['fields']['alias']['save_callback'] = [];  // reset
     $dca['fields']['source']['options_callback'] = [CalendarSubEventsContainer::class, 'getSourceOptions'];
     $dca['fields']['articleId']['options_callback'] = [CalendarSubEventsContainer::class, 'getArticleAlias'];
     $dca['fields']['serpPreview']['eval']['url_callback'] = [CalendarSubEventsContainer::class, 'getSerpUrl'];

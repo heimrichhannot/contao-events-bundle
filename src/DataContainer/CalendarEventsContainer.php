@@ -44,6 +44,10 @@ readonly class CalendarEventsContainer
         private Utils                  $utils,
     ) {}
 
+    public function getFeaturedIconTable(): string
+    {
+        return static::TABLE;
+    }
 
     /**
      * Set the timestamp to 1970-01-01 (see #26).
@@ -99,6 +103,71 @@ readonly class CalendarEventsContainer
         }
 
         return $this->locationUtil->computeCoordinatesInSaveCallback($value, $dc);
+    }
+
+    public function iconFeatured($row, $href, $label, $title, $icon, $attributes): string
+    {
+        $table = static::TABLE;
+
+        $user = BackendUser::getInstance();
+
+        if ($fid = Input::get('fid'))
+        {
+            $this->toggleFeatured($fid, (1 == Input::get('state')), (@func_get_arg(12) ?: null));
+            Controller::redirect(System::getReferer());
+        }
+
+        // Check permissions AFTER checking the fid, so hacking attempts are logged
+        if (!$user->hasAccess($table . '::featured', 'alexf')) {
+            return '';
+        }
+
+        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
+
+        if (!$row['featured']) {
+            $icon = 'featured_.svg';
+        }
+
+        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
+    }
+
+    public function toggleFeatured(int $id, bool $visible, ?DataContainer $dc = null): void
+    {
+        $table = static::TABLE;
+
+        $user = BackendUser::getInstance();
+        $db = Database::getInstance();
+
+        // Check permissions to edit
+        Input::setGet('id', $id);
+        Input::setGet('act', 'feature');
+        $this->checkPermission();
+
+        // Check permissions to feature
+        if (!$user->hasAccess($table . '::featured', 'alexf')) {
+            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$id.'.');
+        }
+
+        $objVersions = new Versions($table, $id);
+        $objVersions->initialize();
+
+        // Trigger the save_callback
+        if (\is_array($GLOBALS['TL_DCA'][$table]['fields']['featured']['save_callback'])) {
+            foreach ($GLOBALS['TL_DCA'][$table]['fields']['featured']['save_callback'] as $callback) {
+                if (\is_array($callback)) {
+                    $obj = System::importStatic($callback[0]);
+                    $visible = $obj->{$callback[1]}($visible, $dc);
+                } elseif (\is_callable($callback)) {
+                    $visible = $callback($visible, $this);
+                }
+            }
+        }
+
+        // Update the database
+        $db->prepare("UPDATE $table SET tstamp=?, featured=? WHERE id=?")
+            ->execute(time(), ($visible ? '1' : ''), $id);
+
+        $objVersions->create();
     }
 
     public function listEvents(array $row): string
@@ -214,90 +283,9 @@ readonly class CalendarEventsContainer
 
         $requestToken = $this->csrfTokenManager->getDefaultTokenValue();
 
-        $href .= '&pid='.\Input::get('id').'&parentEvent='.$row['id'].'&rt=' . $requestToken;
+        $href .= '&pid=' . Input::get('id') . '&parentEvent=' . $row['id'] . '&rt=' . $requestToken;
 
         return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
-    }
-
-    /**
-     * Return the "feature/unfeature element" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
-    public function iconFeatured($row, $href, $label, $title, $icon, $attributes): string
-    {
-        $user = BackendUser::getInstance();
-
-        if (\strlen(Input::get('fid'))) {
-            $this->toggleFeatured(Input::get('fid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
-            Controller::redirect(System::getReferer());
-        }
-
-        // Check permissions AFTER checking the fid, so hacking attempts are logged
-        if (!$user->hasAccess('tl_calendar_events::featured', 'alexf')) {
-            return '';
-        }
-
-        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
-
-        if (!$row['featured']) {
-            $icon = 'featured_.svg';
-        }
-
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
-    }
-
-    /**
-     * Feature/unfeature a calendar event.
-     *
-     * @param int            $id
-     * @param bool           $visible
-     * @param ?DataContainer $dc
-     *
-     * @throws AccessDeniedException
-     */
-    public function toggleFeatured(int $id, bool $visible, ?DataContainer $dc = null): void
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        // Check permissions to edit
-        Input::setGet('id', $id);
-        Input::setGet('act', 'feature');
-        $this->checkPermission();
-
-        // Check permissions to feature
-        if (!$user->hasAccess('tl_calendar_events::featured', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$id.'.');
-        }
-
-        $objVersions = new Versions('tl_calendar_events', $id);
-        $objVersions->initialize();
-
-        // Trigger the save_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $visible = $obj->{$callback[1]}($visible, $dc);
-                } elseif (\is_callable($callback)) {
-                    $visible = $callback($visible, $this);
-                }
-            }
-        }
-
-        // Update the database
-        $db->prepare('UPDATE tl_calendar_events SET tstamp='.time().", featured='".($visible ? '1' : '')."' WHERE id=?")
-            ->execute($id);
-
-        $objVersions->create();
     }
 
     /**
@@ -307,15 +295,17 @@ readonly class CalendarEventsContainer
      */
     public function checkPermission(): void
     {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
+        $table = static::TABLE;
         $bundles = $this->parameterBag->get('kernel.bundles');
 
         // HOOK: comments extension required
         if (!isset($bundles['ContaoCommentsBundle'])) {
-            $key = array_search('allowComments', $GLOBALS['TL_DCA']['tl_calendar_events']['list']['sorting']['headerFields']);
-            unset($GLOBALS['TL_DCA']['tl_calendar_events']['list']['sorting']['headerFields'][$key]);
+            $key = array_search('allowComments', $GLOBALS['TL_DCA'][$table]['list']['sorting']['headerFields']);
+            unset($GLOBALS['TL_DCA'][$table]['list']['sorting']['headerFields'][$key]);
         }
+
+        $user = BackendUser::getInstance();
+        $db = Database::getInstance();
 
         if ($user->isAdmin) {
             return;
@@ -355,7 +345,7 @@ readonly class CalendarEventsContainer
             case 'delete':
             case 'toggle':
             case 'feature':
-                $calendar = $db->prepare('SELECT pid FROM tl_calendar_events WHERE id=?')
+                $calendar = $db->prepare("SELECT pid FROM $table WHERE id=?")
                     ->limit(1)
                     ->execute($id);
 
@@ -379,7 +369,7 @@ readonly class CalendarEventsContainer
                     throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
                 }
 
-                $calendar = $db->prepare('SELECT id FROM tl_calendar_events WHERE pid=?')->execute($id);
+                $calendar = $db->prepare("SELECT id FROM $table WHERE pid=?")->execute($id);
 
                 if ($calendar->numRows < 1) {
                     throw new AccessDeniedException('Invalid calendar ID '.$id.'.');

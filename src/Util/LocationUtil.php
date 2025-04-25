@@ -90,10 +90,12 @@ class LocationUtil
 
     public function computeCoordinatesInSaveCallback($value, DataContainer $dc)
     {
+        $activeRecord = DcaHelper::activeRecord($dc);
+
         $data = [
-            'street' => $dc->activeRecord->street,
-            'postal' => $dc->activeRecord->postal,
-            'city' => $dc->activeRecord->city,
+            'street' => $activeRecord->street,
+            'postal' => $activeRecord->postal,
+            'city' => $activeRecord->city,
         ];
 
         if ($value || empty(array_filter($data))) {
@@ -101,9 +103,9 @@ class LocationUtil
         }
 
         $result = $this->computeCoordinatesByArray([
-            'street' => $dc->activeRecord->street,
-            'postal' => $dc->activeRecord->postal,
-            'city' => $dc->activeRecord->city,
+            'street' => $activeRecord->street,
+            'postal' => $activeRecord->postal,
+            'city' => $activeRecord->city,
         ]);
 
         if (!$result) {

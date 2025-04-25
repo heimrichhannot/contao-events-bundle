@@ -12,6 +12,8 @@ use Contao\BackendUser;
 use Contao\Calendar;
 use Contao\Config;
 use Contao\Controller;
+use Contao\CoreBundle\Csrf\ContaoCsrfTokenManager;
+use Contao\CoreBundle\DependencyInjection\Attribute\AsCallback;
 use Contao\CoreBundle\Exception\AccessDeniedException;
 use Contao\Database;
 use Contao\DataContainer;
@@ -24,48 +26,43 @@ use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
+use Exception;
+use HeimrichHannot\EventsBundle\Manager\EventsManager;
 use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
+use HeimrichHannot\EventsBundle\Util\DcaHelper;
+use HeimrichHannot\EventsBundle\Util\Helper;
+use HeimrichHannot\EventsBundle\Util\LocationUtil;
 use HeimrichHannot\UtilsBundle\Util\Utils;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
-class CalendarSubEventsContainer
+readonly class CalendarSubEventsContainer extends CalendarEventsContainer
 {
     public const TABLE = 'tl_calendar_sub_events';
 
-    public function __construct(private readonly Utils $utils) {}
+    public function __construct(
+        ContaoCsrfTokenManager $csrfTokenManager,
+        EventsManager          $eventsManager,
+        Helper                 $helper,
+        LocationUtil           $locationUtil,
+        ParameterBagInterface  $parameterBag,
+        RequestStack           $requestStack,
+        private Utils          $utils,
+    ) {
+        parent::__construct(
+            $csrfTokenManager,
+            $eventsManager,
+            $helper,
+            $locationUtil,
+            $parameterBag,
+            $requestStack,
+            $utils,
+        );
+    }
 
-    /**
-     * Return the "feature/un-feature element" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
-    public function iconFeatured($row, $href, $label, $title, $icon, $attributes)
+    public function getFeaturedIconTable(): string
     {
-        $user = BackendUser::getInstance();
-
-        if (\strlen(Input::get('fid'))) {
-            $this->toggleFeatured(Input::get('fid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
-            Controller::redirect(System::getReferer());
-        }
-
-        // Check permissions AFTER checking the fid, so hacking attempts are logged
-        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
-            return '';
-        }
-
-        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
-
-        if (!$row['featured']) {
-            $icon = 'featured_.svg';
-        }
-
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
+        return static::TABLE;
     }
 
     /**
@@ -82,8 +79,9 @@ class CalendarSubEventsContainer
      * Return the title tag from the associated page layout.
      *
      * @return string
+     * @throws Exception
      */
-    public function getTitleTag(CalendarSubEventsModel $model)
+    public function getTitleTag(CalendarSubEventsModel $model): string
     {
         if (null === ($event = $this->utils->model()->findModelInstanceByPk('tl_calendar', $model->pid))) {
             return '';
@@ -114,245 +112,85 @@ class CalendarSubEventsContainer
     }
 
     /**
-     * Feature/unfeature a calendar event.
-     *
-     * @param int           $intId
-     * @param bool          $blnVisible
-     * @param DataContainer $dc
-     *
-     * @throws \Contao\CoreBundle\Exception\AccessDeniedException
-     */
-    public function toggleFeatured($intId, $blnVisible, DataContainer $dc = null)
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        // Check permissions to edit
-        Input::setGet('id', $intId);
-        Input::setGet('act', 'feature');
-        $this->checkPermission();
-
-        // Check permissions to feature
-        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$intId.'.');
-        }
-
-        $objVersions = new Versions('tl_calendar_sub_events', $intId);
-        $objVersions->initialize();
-
-        // Trigger the save_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
-                } elseif (\is_callable($callback)) {
-                    $blnVisible = $callback($blnVisible, $this);
-                }
-            }
-        }
-
-        // Update the database
-        $db->prepare('UPDATE tl_calendar_sub_events SET tstamp='.time().", featured='".($blnVisible ? 1 : '')."' WHERE id=?")
-            ->execute($intId);
-
-        $objVersions->create();
-    }
-
-    /**
-     * Check permissions to edit table tl_calendar_sub_events.
-     *
-     * @throws AccessDeniedException
-     */
-    public function checkPermission()
-    {
-        $bundles = System::getContainer()->getParameter('kernel.bundles');
-
-        // HOOK: comments extension required
-        if (!isset($bundles['ContaoCommentsBundle'])) {
-            $key = array_search('allowComments', $GLOBALS['TL_DCA']['tl_calendar_sub_events']['list']['sorting']['headerFields']);
-            unset($GLOBALS['TL_DCA']['tl_calendar_sub_events']['list']['sorting']['headerFields'][$key]);
-        }
-
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        if ($user->isAdmin) {
-            return;
-        }
-
-        // Set root IDs
-        if (empty($user->calendars) || !\is_array($user->calendars)) {
-            $root = [0];
-        } else {
-            $root = $user->calendars;
-        }
-
-        $id = \strlen(Input::get('id')) ? Input::get('id') : CURRENT_ID;
-
-        // Check current action
-        switch (Input::get('act')) {
-            case 'paste':
-                // Allow
-                break;
-
-            case 'create':
-                if (!\strlen(Input::get('pid')) || !\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to create events in calendar ID '.Input::get('pid').'.');
-                }
-
-                break;
-
-            case 'cut':
-            case 'copy':
-                if (!\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' to calendar ID '.Input::get('pid').'.');
-                }
-            // no break STATEMENT HERE
-
-            case 'edit':
-            case 'show':
-            case 'delete':
-            case 'toggle':
-            case 'feature':
-                $objCalendar = $db->prepare('SELECT pid FROM tl_calendar_sub_events WHERE id=?')
-                    ->limit(1)
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid event ID '.$id.'.');
-                }
-
-                if (!\in_array($objCalendar->pid, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' of calendar ID '.$objCalendar->pid.'.');
-                }
-
-                break;
-
-            case 'select':
-            case 'editAll':
-            case 'deleteAll':
-            case 'overrideAll':
-            case 'cutAll':
-            case 'copyAll':
-                if (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                $objCalendar = $db->prepare('SELECT id FROM tl_calendar_sub_events WHERE pid=?')
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid calendar ID '.$id.'.');
-                }
-
-                /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
-                $objSession = System::getContainer()->get('session');
-
-                $session = $objSession->all();
-                $session['CURRENT']['IDS'] = array_intersect((array) $session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
-                $objSession->replace($session);
-
-                break;
-
-            default:
-                if (\strlen(Input::get('act'))) {
-                    throw new AccessDeniedException('Invalid command "'.Input::get('act').'".');
-                } elseif (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                break;
-        }
-    }
-
-    /**
      * Auto-generate the event alias if it has not been set yet.
      *
-     * @param mixed $varValue
-     *
-     * @throws \Exception
-     *
-     * @return mixed
+     * @throws \Exception If the alias already exists
      */
-    public function generateAlias($varValue, DataContainer $dc)
+    #[AsCallback(self::TABLE, 'fields.alias.save', priority: 255)]
+    public function generateAlias(string $value, DataContainer $dc): string
     {
         $autoAlias = false;
         $db = Database::getInstance();
 
         // Generate alias if there is none
-        if ('' == $varValue) {
+        if (!$value)
+        {
+            $record = DcaHelper::activeRecord($dc);
             $autoAlias = true;
-            $varValue = StringUtil::generateAlias($dc->activeRecord->title);
+            $value = StringUtil::generateAlias($record->title ?: $dc->id);
         }
 
-        $objAlias = $db->prepare('SELECT id FROM tl_calendar_sub_events WHERE alias=? AND id!=?')
-            ->execute($varValue, $dc->id);
+        $subEvent = $db->prepare('SELECT id FROM tl_calendar_sub_events WHERE alias=? AND id!=?')->execute($value, $dc->id);
 
         // Check whether the event alias exists
-        if ($objAlias->numRows) {
+        if ($subEvent->numRows)
+        {
             if (!$autoAlias) {
-                throw new \Exception(sprintf($GLOBALS['TL_LANG']['ERR']['aliasExists'], $varValue));
+                throw new \Exception(sprintf($GLOBALS['TL_LANG']['ERR']['aliasExists'], $value));
             }
 
-            $varValue .= '-'.$dc->id;
+            $value .= '-' . $dc->id;
         }
 
-        return $varValue;
+        return $value;
     }
 
-    /**
-     * Set the timestamp to 1970-01-01 (see #26).
-     *
-     * @param int $value
-     *
-     * @return int
-     */
-    public function loadTime($value)
+    #[AsCallback(self::TABLE, 'fields.startTime.load')]
+    #[AsCallback(self::TABLE, 'fields.endTime.load')]
+    public function loadTime(int $value): int
     {
-        if ($this->containerUtil->isFrontend()) {
-            return $value;
-        }
-
-        return strtotime('1970-01-01 '.date('H:i:s', $value));
+        return parent::loadTime($value);
     }
 
     /**
      * Automatically set the end time if not set.
-     *
-     * @param mixed $varValue
-     *
-     * @return string
      */
-    public function setEmptyEndTime($varValue, DataContainer $dc)
+    #[AsCallback(self::TABLE, 'fields.endTime.save')]
+    public function setEmptyEndTime(mixed $value, DataContainer $dc): string
     {
-        if (null === $varValue) {
-            $varValue = $dc->activeRecord->startTime;
+        if (null === $value && ($activeRecord = DcaHelper::activeRecord($dc)))
+        {
+            $value = $activeRecord->startTime ?? '';
         }
 
-        return $varValue;
+        return (string) ($value ?: '');
     }
 
     /**
      * Add the type of input field.
      *
-     * @param array $arrRow
+     * @param array $row
      *
      * @return string
      */
-    public function listEvents($arrRow)
+    public function listEvents(array $row): string
     {
-        $span = Calendar::calculateSpan($arrRow['startTime'], $arrRow['endTime']);
+        $span = Calendar::calculateSpan($row['startTime'], $row['endTime']);
 
-        if ($span > 0) {
-            $date = Date::parse(Config::get(($arrRow['addTime'] ? 'datimFormat' : 'dateFormat')), $arrRow['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get(($arrRow['addTime'] ? 'datimFormat' : 'dateFormat')), $arrRow['endTime']);
-        } elseif ($arrRow['startTime'] == $arrRow['endTime']) {
-            $date = Date::parse(Config::get('dateFormat'), $arrRow['startTime']).($arrRow['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $arrRow['startTime']) : '');
-        } else {
-            $date = Date::parse(Config::get('dateFormat'), $arrRow['startTime']).($arrRow['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $arrRow['startTime']).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get('timeFormat'), $arrRow['endTime']) : '');
+        if ($span > 0)
+        {
+            $date = Date::parse(Config::get(($row['addTime'] ? 'datimFormat' : 'dateFormat')), $row['startTime']). $GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get(($row['addTime'] ? 'datimFormat' : 'dateFormat')), $row['endTime']);
+        }
+        elseif ($row['startTime'] == $row['endTime'])
+        {
+            $date = Date::parse(Config::get('dateFormat'), $row['startTime']).($row['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $row['startTime']) : '');
+        }
+        else
+        {
+            $date = Date::parse(Config::get('dateFormat'), $row['startTime']).($row['addTime'] ? ' '.Date::parse(Config::get('timeFormat'), $row['startTime']). $GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].Date::parse(Config::get('timeFormat'), $row['endTime']) : '');
         }
 
-        return '<div class="tl_content_left">'.$arrRow['title'].' <span style="color:#999;padding-left:3px">['.$date.']</span></div>';
+        return '<div class="tl_content_left">'. $row['title'].' <span style="color:#999;padding-left:3px">['.$date.']</span></div>';
     }
 
     /**
@@ -360,7 +198,7 @@ class CalendarSubEventsContainer
      *
      * @return array
      */
-    public function getArticleAlias(DataContainer $dc)
+    public function getArticleAlias(DataContainer $dc): array
     {
         $arrPids = [];
         $arrAlias = [];
@@ -400,7 +238,7 @@ class CalendarSubEventsContainer
      *
      * @return array
      */
-    public function getSourceOptions(DataContainer $dc)
+    public function getSourceOptions(DataContainer $dc): array
     {
         $user = BackendUser::getInstance();
 
@@ -435,9 +273,9 @@ class CalendarSubEventsContainer
     }
 
     /**
-     * Adjust start end end time of the event based on date, span, startTime and endTime.
+     * Adjust start and end time of the event based on date, span, startTime and endTime.
      */
-    public function adjustTime(DataContainer $dc)
+    public function adjustTime(DataContainer $dc): void
     {
         // Return if there is no active record (override all)
         if (!$dc->activeRecord) {
@@ -593,10 +431,11 @@ class CalendarSubEventsContainer
         }
 
         $time = time();
+        $published = ($blnVisible ? '1' : '');
 
         // Update the database
-        $db->prepare("UPDATE tl_calendar_sub_events SET tstamp=$time, published='".($blnVisible ? '1' : '')."' WHERE id=?")
-            ->execute($intId);
+        $db->prepare("UPDATE tl_calendar_sub_events SET tstamp=?, published=? WHERE id=?")
+            ->execute($time, $published, $intId);
 
         if ($dc) {
             $dc->activeRecord->tstamp = $time;
