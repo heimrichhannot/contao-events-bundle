@@ -1,6 +1,7 @@
 <?php
 
 use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
+use HeimrichHannot\EventsBundle\Enum\SubEventMode;
 
 $dca = &$GLOBALS['TL_DCA']['tl_settings'];
 
@@ -14,22 +15,22 @@ $dca['palettes']['default'] .= ';{events_bundle_legend},subEventMode,skipCalenda
  */
 $fields = [
     'subEventMode' => [
-        'label'                   => &$GLOBALS['TL_LANG']['tl_settings']['subEventMode'],
-        'exclude'                 => true,
-        'filter'                  => true,
-        'inputType'               => 'select',
+        'label' => &$GLOBALS['TL_LANG']['tl_settings']['subEventMode'],
+        'exclude' => true,
+        'filter' => true,
+        'inputType' => 'select',
         'options' => [
-            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY,
-            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION
+            SubEventMode::ENTITY->value,
+            SubEventMode::RELATION->value,
         ],
         'reference' => &$GLOBALS['TL_LANG']['tl_settings']['reference']['eventsBundle'],
-        'eval'                    => ['tl_class' => 'w50', 'includeBlankOption' => true],
+        'eval' => ['tl_class' => 'w50', 'includeBlankOption' => true],
     ],
     'skipCalendarEventCoordinateRetrieval' => [
-        'label'                   => &$GLOBALS['TL_LANG']['tl_settings']['skipCalendarEventCoordinateRetrieval'],
-        'exclude'                 => true,
-        'inputType'               => 'checkbox',
-        'eval'                    => ['tl_class' => 'w50'],
+        'label' => &$GLOBALS['TL_LANG']['tl_settings']['skipCalendarEventCoordinateRetrieval'],
+        'exclude' => true,
+        'inputType' => 'checkbox',
+        'eval' => ['tl_class' => 'w50'],
     ],
 ];
 

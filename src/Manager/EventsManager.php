@@ -14,6 +14,7 @@ use Contao\DataContainer;
 use Contao\Input;
 use Contao\Model;
 use Contao\Model\Collection;
+use HeimrichHannot\EventsBundle\Enum\SubEventMode;
 use HeimrichHannot\EventsBundle\Event\BeforeGetSubEventsEvent;
 use HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer;
 use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
@@ -29,9 +30,10 @@ readonly class EventsManager
 
     public function initCalendarEventsDcaForSubEvents(): void
     {
-        match (Config::get('subEventMode')) {
-            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => $this->initCalendarEventsDcaForSubEventModeEntity(),
-            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => $this->initCalendarEventsDcaForSubEventModeRelation(),
+        match (SubEventMode::fromConfig()) {
+            SubEventMode::ENTITY   => $this->initCalendarEventsDcaForSubEventModeEntity(),
+            SubEventMode::RELATION => $this->initCalendarEventsDcaForSubEventModeRelation(),
+            default => null,
         };
     }
 
@@ -169,17 +171,17 @@ readonly class EventsManager
      */
     public function getSubEvents(int $eventId, array $options = []): Collection|Model|array|null
     {
-        $subEventMode = Config::get('subEventMode');
+        $subEventMode = SubEventMode::fromConfig();
 
         $table = match ($subEventMode) {
-            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => 'tl_calendar_sub_events',
-            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => 'tl_calendar_events',
+            SubEventMode::ENTITY   => 'tl_calendar_sub_events',
+            SubEventMode::RELATION => 'tl_calendar_events',
             default => null,
         };
 
         $parentProperty = match ($subEventMode) {
-            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => 'tl_calendar_events.id',
-            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => 'tl_calendar_events.parentEvent',
+            SubEventMode::ENTITY   => 'tl_calendar_events.id',
+            SubEventMode::RELATION => 'tl_calendar_events.parentEvent',
             default => null,
         };
 

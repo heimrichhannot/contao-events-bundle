@@ -1,5 +1,7 @@
 <?php
 
+use HeimrichHannot\EventsBundle\Enum\SubEventMode;
+
 $lang = &$GLOBALS['TL_LANG']['tl_settings'];
 
 /**
@@ -21,6 +23,6 @@ $lang['events_bundle_legend'] = 'Events-Bundle';
  * Reference
  */
 $lang['reference']['eventsBundle'] = [
-    \HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => 'Umsetzung als Entität "tl_calendar_sub_events"',
-    \HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => 'Umsetzung durch eine Parent-Child-Beziehung'
+    SubEventMode::ENTITY->value   => 'Umsetzung als Entität "tl_calendar_sub_events"',
+    SubEventMode::RELATION->value => 'Umsetzung durch eine Parent-Child-Beziehung',
 ];

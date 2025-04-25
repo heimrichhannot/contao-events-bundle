@@ -1,11 +1,11 @@
 <?php
 
-use Contao\Config;
 use Contao\Controller;
 use Contao\System;
 use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
+use HeimrichHannot\EventsBundle\Enum\SubEventMode;
 
-if (Config::get('subEventMode') === CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY)
+if (SubEventMode::is(SubEventMode::ENTITY))
     // only load the dca if we are in entity sub event mode
 {
     $dca = &$GLOBALS['TL_DCA']['tl_calendar_sub_events'];

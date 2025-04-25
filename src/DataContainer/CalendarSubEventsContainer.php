@@ -31,17 +31,10 @@ class CalendarSubEventsContainer
 {
     public const TABLE = 'tl_calendar_sub_events';
 
-    const SUB_EVENT_MODE_ENTITY = 'entity';
-    const SUB_EVENT_MODE_RELATION = 'relation';
-
-    public function __construct(private readonly Utils $utils)
-    {
-        // $this->containerUtil = $containerUtil;
-        // $this->modelUtil = $modelUtil;
-    }
+    public function __construct(private readonly Utils $utils) {}
 
     /**
-     * Return the "feature/unfeature element" button.
+     * Return the "feature/un-feature element" button.
      *
      * @param array  $row
      * @param string $href
