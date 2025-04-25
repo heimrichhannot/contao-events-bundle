@@ -6,7 +6,7 @@
  * @license LGPL-3.0-or-later
  */
 
-namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
+namespace HeimrichHannot\EventsBundle\DataContainer;
 
 use Contao\BackendUser;
 use Contao\Calendar;
@@ -25,26 +25,19 @@ use Contao\StringUtil;
 use Contao\System;
 use Contao\Versions;
 use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
-use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
-class CalendarSubEventsListener
+class CalendarSubEventsContainer
 {
+    public const TABLE = 'tl_calendar_sub_events';
+
     const SUB_EVENT_MODE_ENTITY = 'entity';
     const SUB_EVENT_MODE_RELATION = 'relation';
-    /**
-     * @var ContainerUtil
-     */
-    protected $containerUtil;
-    /**
-     * @var ModelUtil
-     */
-    protected $modelUtil;
 
-    public function __construct(ContainerUtil $containerUtil, ModelUtil $modelUtil)
+    public function __construct(private readonly Utils $utils)
     {
-        $this->containerUtil = $containerUtil;
-        $this->modelUtil = $modelUtil;
+        // $this->containerUtil = $containerUtil;
+        // $this->modelUtil = $modelUtil;
     }
 
     /**
@@ -99,11 +92,11 @@ class CalendarSubEventsListener
      */
     public function getTitleTag(CalendarSubEventsModel $model)
     {
-        if (null === ($event = $this->modelUtil->findModelInstanceByPk('tl_calendar', $model->pid))) {
+        if (null === ($event = $this->utils->model()->findModelInstanceByPk('tl_calendar', $model->pid))) {
             return '';
         }
 
-        if (null === ($calendar = $this->modelUtil->findModelInstanceByPk('tl_calendar', $event->pid))) {
+        if (null === ($calendar = $this->utils->model()->findModelInstanceByPk('tl_calendar', $event->pid))) {
             return '';
         }
 

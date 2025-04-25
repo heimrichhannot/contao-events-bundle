@@ -1,5 +1,7 @@
 <?php
 
+use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
+
 $dca = &$GLOBALS['TL_DCA']['tl_settings'];
 
 /**
@@ -17,8 +19,8 @@ $fields = [
         'filter'                  => true,
         'inputType'               => 'select',
         'options' => [
-            \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY,
-            \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_RELATION
+            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY,
+            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION
         ],
         'reference' => &$GLOBALS['TL_LANG']['tl_settings']['reference']['eventsBundle'],
         'eval'                    => ['tl_class' => 'w50', 'includeBlankOption' => true],

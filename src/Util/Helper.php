@@ -3,6 +3,7 @@
 namespace HeimrichHannot\EventsBundle\Util;
 
 use Contao\Controller;
+use Contao\CoreBundle\Csrf\ContaoCsrfTokenManager;
 use Contao\Image;
 use Contao\Input;
 use Contao\StringUtil;
@@ -101,138 +102,154 @@ class Helper
         return $startDateTimeFormatted.$separator.$endDateTimeFormatted;
     }
 
-    public static function generateDcOperationsButtons($row, $table, $rootIds = [], $options = []): string
+    public function __construct(
+        private readonly ContaoCsrfTokenManager $csrfTokenManager,
+    ) {}
+
+    public function generateDcOperationsButtons($row, $table, $rootIds = [], $options = []): string
     {
-        // Edit multiple
-        if ('select' == Input::get('act'))
+        if (Input::get('act') === 'select')
+            // Edit multiple
         {
             return '<input type="checkbox" name="IDS[]" id="ids_'.$row['id'].'" class="tl_tree_checkbox" value="'.$row['id'].'">';
         }
 
-        return static::doGenerateDcOperationsButtons($row, $table, $rootIds, false, null, $options);
+        return $this->doGenerateDcOperationsButtons($row, $table, $rootIds, false, null, $options);
     }
 
-    public static function doGenerateDcOperationsButtons(
-        $arrRow,
-        $strTable,
-        $arrRootIds = [],
-        $blnCircularReference = false,
-        $arrChildRecordIds = null,
-        $options = [],
+    public function doGenerateDcOperationsButtons(
+        array  $row,
+        string $table,
+        array  $rootIds = [],
+        bool   $circularReference = false,
+        ?array $childIds = null,
+        array  $options = [],
     ): string {
-        if (!$dcOps = $GLOBALS['TL_DCA'][$strTable]['list']['operations'] ?? null) {
+        if (!$operations = $GLOBALS['TL_DCA'][$table]['list']['operations'] ?? null) {
             return '';
         }
 
-        $return = '';
+        $compound = '';
 
-        $allowedOps = $options['operations'] ?? \array_diff(\array_keys($dcOps), $options['skipOperations'] ?? []);
+        $allowedOperations = $options['operations']
+            ?? \array_diff(\array_keys($operations), $options['skipOperations'] ?? []);
+        $operations = \array_intersect_key($operations, \array_flip($allowedOperations));
 
-        $dcOps = \array_intersect_key($dcOps, \array_flip($allowedOps));
-
-        foreach ($dcOps as $k => $v)
+        foreach ($operations as $k => $v)
         {
             /*if (!\in_array($k, $allowedOps)) {
                 continue;
             }*/
 
             $v = \is_array($v) ? $v : [$v];
-            $id = StringUtil::specialchars(\rawurldecode($arrRow['id']));
+
+            $id = $row['id'];
+            $htmlId = StringUtil::specialchars(\rawurldecode($row['id']));
+
+            $icon = $v['icon'];
 
             $label = $v['label'] ?? null;
             $title = $v['label'] ?? null;
 
+            $href = $v['href'] ?? null;
+
             if (\is_array($label)) {
-                $label = $label[0] ?? '';
+                $label = $label[0] ?? null;
                 $title = $label[1] ?? '';
             }
 
             $label ??= $k;
-            $title = \sprintf(isset($v['label']) ? (\is_array($v['label']) ? $v['label'][1] : $v['label']) : $k, $id);
+            $title = \sprintf($title, $htmlId);
 
-            $attributes = ('' != $v['attributes']) ? ' '. \ltrim(sprintf($v['attributes'], $id, $id)) : '';
+            $attributes = $v['attributes'] ?? null;
+            $attributes .= ' ' . \ltrim(\sprintf($attributes, $htmlId, $htmlId));
 
-            \parse_str(StringUtil::decodeEntities($v['href'] ?? ''), $params);
+            \parse_str(StringUtil::decodeEntities($href ?: ''), $params);
 
-            if (\in_array($k, ['toggle', 'feature']))
+            $stateField = $params['field'] ?? 'published';
+            $state = (bool) $row[$stateField];
+            if ($v['reverse'] ?? false) {
+                $state = !$state;
+            }
+
+            $iconFilename = \pathinfo($icon, \PATHINFO_FILENAME);
+            $iconExtension = \pathinfo($icon, \PATHINFO_EXTENSION);
+            $_icon = \sprintf('%s_.%s', $iconFilename, $iconExtension);
+
+            if ('visible.svg' === $icon) {
+                $_icon = 'invisible.svg';
+            } elseif (\str_contains($icon, '/')) {
+                $_icon = \dirname($icon) . '/' . $_icon;
+            }
+
+            $isToggle = $k === 'toggle' || $k === 'feature';
+
+            if ($isToggle && !\str_contains($attributes, 'onclick'))
             {
-                $state = $arrRow[$params['field']] ? 1 : 0;
-
-                if ($v['reverse'] ?? false) {
-                    $state = $arrRow[$params['field']] ? 0 : 1;
-                }
-
-                $icon = $v['icon'];
-                $_icon = pathinfo($v['icon'], \PATHINFO_FILENAME).'_.'.pathinfo($v['icon'], \PATHINFO_EXTENSION);
-
-                if (\str_contains($v['icon'], '/')) {
-                    $_icon = \dirname($v['icon']).'/'.$_icon;
-                }
-
-                if ('visible.svg' == $icon) {
-                    $_icon = 'invisible.svg';
-                }
-
-                if (!\str_contains($attributes, 'onclick')) {
-                    $attributes = sprintf(
-                        'onclick="Backend.getScrollOffset();return AjaxRequest.toggleField(this,'.($state ? 'true' : 'false').')"',
-                        $id, $id
-                    );
-                }
+                $attributes .= \sprintf(
+                ' onclick="Backend.getScrollOffset();return AjaxRequest.toggleField(this,%s)"',
+                    $state ? 'true' : 'false'
+                );
             }
 
             // Add the key as CSS class
             if (\str_contains($attributes, 'class="')) {
-                $attributes = str_replace('class="', 'class="'.$k.' ', $attributes);
+                $attributes = \str_replace('class="', "class=\"$k ", $attributes);
             } else {
-                $attributes = ' class="'.$k.'"'.$attributes;
+                $attributes .= " class=\"$k\"";
             }
 
             // Call a custom function instead of using the default button
-            if (\is_array($v['button_callback'])) {
-                $callback = System::importStatic($v['button_callback'][0]);
-                $return .= $callback->{$v['button_callback'][1]}($arrRow, $v['href'], $label, $title, $v['icon'], $attributes, $strTable, $arrRootIds, $arrChildRecordIds, $blnCircularReference, null, null, $this);
+            if ($buttonCallback = $v['button_callback'] ?? null)
+            {
+                if (\is_array($buttonCallback))
+                {
+                    $container = System::importStatic($buttonCallback[0]);
+                    $buttonCallback = $container->{$buttonCallback[1]}(...);
+                }
 
-                continue;
-            } elseif (\is_callable($v['button_callback'])) {
-                $return .= $v['button_callback']($arrRow, $v['href'], $label, $title, $v['icon'], $attributes, $strTable, $arrRootIds, $arrChildRecordIds, $blnCircularReference, null, null, $this);
-
-                continue;
+                if (\is_callable($buttonCallback))
+                {
+                    $compound .= $buttonCallback($row, $href, $label, $title, $icon, $attributes, $table, $rootIds, $childIds, $circularReference, null, null, $this);
+                    continue;
+                }
             }
 
             // Generate all buttons except "move up" and "move down" buttons
-            if ($k === 'move' || $v === 'move') {
+            if ($k === 'move') {
                 continue;
             }
 
-            // todo: ready
+            $csrfToken = $this->csrfTokenManager->getDefaultTokenValue();
+            // $href . '&amp;id=' . $id . '&amp;rt=' . $csrfToken
+            $idHref = Controller::addToUrl(\implode('&amp;', [$href, 'id=' . $id, 'rt=' . $csrfToken]));
 
-            if ('show' == $k)
+            if ($k === 'show')
             {
-                $return .= \sprintf('<a href="%s" title="%s" onclick="Backend.openModalIframe({\'title\':\'%s\',\'url\':this.href});return false;" %s>%s</a>',
-                    Controller::addToUrl($v['href'] . '&amp;id=' . $arrRow['id'] . '&amp;popup=1&amp;rt=' . \Contao\RequestToken::get()),
+                $compound .= \sprintf(
+                    ' <a href="%s" title="%s" onclick="Backend.openModalIframe({\'title\':\'%s\',\'url\':this.href});return false;" %s>%s</a> ',
+                    Controller::addToUrl($idHref . '&amp;popup=1'),
                     StringUtil::specialchars($title),
-                    StringUtil::specialchars(
-                        \str_replace("'","\\'", sprintf($GLOBALS['TL_LANG'][$strTable]['show'][1], $arrRow['id']))
-                    ),
+                    StringUtil::specialchars(\str_replace("'","\\'", \sprintf($GLOBALS['TL_LANG'][$table]['show'][1] ?? $title, $id))),
                     $attributes,
-                    Image::getHtml($v['icon'], $label),
+                    Image::getHtml($icon, $label),
                 );
-                $return .= '<a  onclick="Backend.openModalIframe({\'title\':\'\',\'url\':this.href});return false"' . $attributes . '>' .  . '</a> ';
                 continue;
             }
 
-            $href = Controller::addToUrl($v['href'].'&amp;id='.$arrRow['id'].(Input::get('nb') ? '&amp;nc=1' : '')).'&amp;rt='.\Contao\RequestToken::get();
+            $iconHtml = $isToggle
+                ? Image::getHtml($state ? $icon : $_icon, $label, \sprintf(
+                    'data-icon="%s" data-icon-disabled="%s" data-icon-state="%s"',
+                    Image::getPath($icon), Image::getPath($_icon), (int) $state
+                ))
+                : Image::getHtml($icon, $label);
 
-            if (\in_array($k, ['toggle', 'feature'])) {
-                $icon = Image::getHtml($state ? $icon : $_icon, $label, 'data-icon="'.Image::getPath($icon).'" data-icon-disabled="'.Image::getPath($_icon).'" data-state="'.$state.'"');
-            } else {
-                $icon = Image::getHtml($v['icon'], $label);
-            }
-
-            $return .= '<a href="'.$href.'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.$icon.'</a> ';
+            $compound .= \sprintf(
+                ' <a href="%s" title="%s" %s>%s</a> ',
+                $idHref, StringUtil::specialchars($title), $attributes, $iconHtml
+            );
         }
 
-        return trim($return);
+        return \trim(\preg_replace('/\s+/', ' ', $compound));
     }
 }

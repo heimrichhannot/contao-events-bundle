@@ -1,4 +1,0 @@
-huh:
-  list:
-    items:
-    - { name: event_default, class: HeimrichHannot\EventsBundle\Item\DefaultListItem }

@@ -6,23 +6,19 @@
  * @license LGPL-3.0-or-later
  */
 
-System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarSubEventsConfig();
+use Contao\Config;
+use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
+use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
 
-/*
- * Hooks
- */
-$GLOBALS['TL_HOOKS']['executePreActions']['events-bundle'] = [
-    \HeimrichHannot\EventsBundle\EventListener\Hook\HookListener::class,
-    'executePreActions'
-];
+if (Config::get('subEventMode') === CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY)
+{
+    /* Models */
+    $GLOBALS['TL_MODELS']['tl_calendar_sub_events'] = CalendarSubEventsModel::class;
 
-$GLOBALS['TL_HOOKS']['loadDataContainer']['huh_events'] = [
-    \HeimrichHannot\EventsBundle\EventListener\LoadDataContainerListener::class,
-    'onLoadDataContainer',
-];
-/*
- * Assets
- */
-if (System::getContainer()->get(\HeimrichHannot\UtilsBundle\Container\ContainerUtil::class)->isBackend()) {
-    $GLOBALS['TL_CSS']['events-bundle'] = 'bundles/heimrichhannotcontaoevents/css/contao-events-bundle.be.css|static';
+    /* Backend modules */
+    $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
+        'tables' => ['tl_calendar_sub_events', 'tl_content'],
+    ];
+
+    $GLOBALS['BE_MOD']['content']['calendar']['tables'][] = 'tl_calendar_sub_events';
 }

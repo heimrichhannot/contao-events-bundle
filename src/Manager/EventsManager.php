@@ -8,228 +8,154 @@
 
 namespace HeimrichHannot\EventsBundle\Manager;
 
+use Contao\ArrayUtil;
 use Contao\Config;
-use Contao\Controller;
 use Contao\DataContainer;
-use Contao\System;
+use Contao\Input;
+use Contao\Model;
+use Contao\Model\Collection;
 use HeimrichHannot\EventsBundle\Event\BeforeGetSubEventsEvent;
-use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener;
-use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
-use HeimrichHannot\UtilsBundle\Arrays\ArrayUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer;
+use HeimrichHannot\EventsBundle\DataContainer\CalendarSubEventsContainer;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class EventsManager
+readonly class EventsManager
 {
-    /**
-     * @var ModelUtil
-     */
-    protected $modelUtil;
-    /**
-     * @var ArrayUtil
-     */
-    protected $arrayUtil;
-    /**
-     * @var EventDispatcherInterface
-     */
-    protected $eventDispatcher;
+    public function __construct(
+        private EventDispatcherInterface $eventDispatcher,
+        private Utils $utils,
+    ) {}
 
-    public function __construct(ModelUtil $modelUtil, ArrayUtil $arrayUtil, EventDispatcherInterface $eventDispatcher)
+    public function initCalendarEventsDcaForSubEvents(): void
     {
-        $this->modelUtil = $modelUtil;
-        $this->arrayUtil = $arrayUtil;
-        $this->eventDispatcher = $eventDispatcher;
+        match (Config::get('subEventMode')) {
+            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => $this->initCalendarEventsDcaForSubEventModeEntity(),
+            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => $this->initCalendarEventsDcaForSubEventModeRelation(),
+        };
     }
 
-    public function initCalendarSubEventsConfig()
+    public function initCalendarEventsDcaForSubEventModeEntity(): void
     {
-        switch (Config::get('subEventMode')) {
-            case CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY:
-                /*
-                 * Models
-                 */
-                $GLOBALS['TL_MODELS']['tl_calendar_sub_events'] = 'HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel';
-
-                /*
-                 * Backend modules
-                 */
-                $GLOBALS['BE_MOD']['content']['calendar_subevents'] = [
-                    'tables' => ['tl_calendar_sub_events', 'tl_content'],
-                ];
-
-                $GLOBALS['BE_MOD']['content']['calendar']['tables'][] = 'tl_calendar_sub_events';
-
-                break;
-        }
-    }
-
-    public function initCalendarSubEventsDca()
-    {
-        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY !== Config::get('subEventMode')) {
-            return;
-        }
-
-        $dca = &$GLOBALS['TL_DCA']['tl_calendar_sub_events'];
-
-        // use the dca of tl_calendar_events as a base
-        Controller::loadDataContainer('tl_calendar_events');
-        System::loadLanguageFile('tl_calendar_events');
-        $dca = $GLOBALS['TL_DCA']['tl_calendar_events'];
-        $GLOBALS['TL_LANG']['tl_calendar_sub_events'] = $GLOBALS['TL_LANG']['tl_calendar_events'];
+        $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
         /*
-         * Config
+         * Operations
          */
-        $dca['config']['ptable'] = 'tl_calendar_events';
-
-        /*
-         * List
-         */
-        // there are no sub-sub-events
-        unset($dca['list']['operations']['subevents']);
-
-        $dca['list']['operations']['edit']['href'] = 'do=calendar_subevents&table=tl_content';
-        $dca['list']['operations']['toggle']['button_callback'] = [CalendarSubEventsListener::class, 'toggleIcon'];
-        $dca['list']['operations']['feature']['button_callback'] = [CalendarSubEventsListener::class, 'iconFeatured'];
-        $dca['list']['sorting']['child_record_callback'] = [CalendarSubEventsListener::class, 'listEvents'];
+        $dca['list']['operations']['subevents'] = [
+            'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
+            'href' => 'table=tl_calendar_sub_events',
+            'button_callback' => [CalendarEventsContainer::class, 'iconSubEvents'],
+        ];
 
         /*
          * Callbacks
          */
-        // Reset callbacks to core default
-        $dca['config']['onload_callback'] = [
-            [CalendarSubEventsListener::class, 'checkPermission'],
-        ];
+        $callbacks = [];
 
-        $dca['config']['onsubmit_callback'] = [
-            [CalendarSubEventsListener::class, 'adjustTime'],
-        ];
+        foreach ($dca['config']['onload_callback'] as $callback) {
+            if ('checkPermission' === $callback[1]) {
+                $callbacks[] = [CalendarEventsContainer::class, 'checkPermission'];
 
-        /*
-         * Fields
-         */
-        $dca['fields']['pid']['foreignKey'] = 'tl_calendar_events.title';
-        $dca['fields']['alias']['save_callback'] = [[CalendarSubEventsListener::class, 'generateAlias']];
-        $dca['fields']['startTime']['load_callback'] = [[CalendarSubEventsListener::class, 'loadTime']];
-        $dca['fields']['endTime']['load_callback'] = [[CalendarSubEventsListener::class, 'loadTime']];
-        $dca['fields']['endTime']['save_callback'] = [[CalendarSubEventsListener::class, 'setEmptyEndTime']];
-        $dca['fields']['source']['options_callback'] = [CalendarSubEventsListener::class, 'getSourceOptions'];
-        $dca['fields']['articleId']['options_callback'] = [CalendarSubEventsListener::class, 'getArticleAlias'];
-        $dca['fields']['serpPreview']['eval']['url_callback'] = [CalendarSubEventsListener::class, 'getSerpUrl'];
-        $dca['fields']['serpPreview']['eval']['title_tag_callback'] = [CalendarSubEventsListener::class, 'getTitleTag'];
+                continue;
+            }
+
+            $callbacks[] = $callback;
+        }
+
+        $dca['config']['onload_callback'] = $callbacks;
     }
 
-    public function initCalendarEventsDcaForSubEvents()
+    public function initCalendarEventsDcaForSubEventModeRelation(): void
     {
         $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
-        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
-            /*
-             * Operations
-             */
-            $dca['list']['operations']['subevents'] = [
-                'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
-                'href' => 'table=tl_calendar_sub_events',
-                'button_callback' => [CalendarEventsListener::class, 'iconSubEvents'],
-            ];
-
-            /**
-             * Callbacks.
-             */
-            $callbacks = [];
-
-            foreach ($dca['config']['onload_callback'] as $callback) {
-                if ('checkPermission' === $callback[1]) {
-                    $callbacks[] = [CalendarEventsListener::class, 'checkPermission'];
-
-                    continue;
-                }
-
-                $callbacks[] = $callback;
+        /*
+         * List
+         */
+        // hide child elements
+        $dca['config']['onload_callback'][] = function (DataContainer $dc) use (&$dca) {
+            if (Input::get('do') !== 'calendar') {
+                return;
             }
 
-            $dca['config']['onload_callback'] = $callbacks;
-        } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
-            /*
-             * List
-             */
-            // hide child elements
-            $dca['config']['onload_callback'][] = function (DataContainer $dc) use (&$dca) {
-                if ('calendar' === \Input::get('do') && null !== ($subEvents = $this->modelUtil->findModelInstancesBy(
-                        'tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], []))) {
-                    foreach ($subEvents->fetchEach('id') as $id) {
-                        $dca['list']['sorting']['root'][] = $id;
-                    }
-                }
-            };
+            if (!$subEvents = $this->utils->model()->findModelInstancesBy('tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], [])) {
+                return;
+            }
 
-            // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
-            $dca['list']['sorting']['child_record_callback'] = [CalendarEventsListener::class, 'listEvents'];
+            foreach ($subEvents->fetchEach('id') as $id) {
+                $dca['list']['sorting']['root'][] = $id;
+            }
+        };
 
-            /*
-             * Operations
-             */
-            $this->arrayUtil->insertInArrayByName(
-                $dca['list']['operations'],
-                'copy', [
+        // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
+        $dca['list']['sorting']['child_record_callback'] = [CalendarEventsContainer::class, 'listEvents'];
+
+        if (false !== ($index = \array_search('copy', \array_keys($dca['list']['operations']))))
+        {
+            ArrayUtil::arrayInsert($dca['list']['operations'], $index + 1, [
                 'create_sub_event' => [
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
                     'icon' => 'new.svg',
                     'href' => 'act=create&mode=2',
-                    'button_callback' => [CalendarEventsListener::class, 'iconCreateSubEvent'],
+                    'button_callback' => [CalendarEventsContainer::class, 'iconCreateSubEvent'],
                 ],
-            ], 1
-            );
-
-            /*
-             * Callbacks
-             */
-            $dca['config']['onload_callback'][] = [CalendarEventsListener::class, 'checkForSubEvents'];
-
-            /*
-             * Palettes
-             */
-            $dca['palettes']['default'] = str_replace('alias,', 'alias,parentEvent,', $dca['palettes']['default']);
-
-            /**
-             * Fields.
-             */
-            $fields = [
-                'parentEvent' => [
-                    'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
-                    'exclude' => true,
-                    'filter' => true,
-                    'default' => \Input::get('parentEvent') ?: 0,
-                    'inputType' => 'select',
-                    'options_callback' => function (DataContainer $dc) {
-                        $options = [];
-
-                        // only allow events which are neither children nor parents
-                        // at first, get all parent event ids
-                        $columns = ['tl_calendar_events.id != ?', 'tl_calendar_events.parentEvent = 0'];
-
-                        if (null !== ($events = $this->modelUtil->findModelInstancesBy(
-                                'tl_calendar_events', $columns, [$dc->id], ['order' => 'tl_calendar_events.startTime DESC']))) {
-                            while ($events->next()) {
-                                $options[$events->id] = $events->title.' ('.date(\Contao\Config::get('dateFormat'), $events->startTime).', ID '.$events->id.')';
-                            }
-                        }
-
-                        return $options;
-                    },
-                    'eval' => ['tl_class' => 'w50', 'includeBlankOption' => true, 'chosen' => true],
-                    'sql' => "int(10) unsigned NOT NULL default '0'",
-                ],
-            ];
-
-            $dca['fields'] += $fields;
-
-            $dca['fields']['alias']['eval']['tl_class'] = 'w50';
+            ]);
         }
+
+        /*
+         * Callbacks
+         */
+        $dca['config']['onload_callback'][] = [CalendarEventsContainer::class, 'checkForSubEvents'];
+
+        /*
+         * Palettes
+         */
+        $dca['palettes']['default'] = str_replace('alias,', 'alias,parentEvent,', $dca['palettes']['default']);
+
+        /*
+         * Fields.
+         */
+        $dca['fields']['parentEvent'] ??= [
+            'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
+            'exclude' => true,
+            'filter' => true,
+            'default' => \Input::get('parentEvent') ?: 0,
+            'inputType' => 'select',
+            'options_callback' => function (DataContainer $dc) {
+                $options = [];
+
+                // only allow events which are neither children nor parents
+                // at first, get all parent event ids
+                $columns = ['tl_calendar_events.id != ?', 'tl_calendar_events.parentEvent = 0'];
+
+                if (!$events = $this->utils->model()->findModelInstancesBy('tl_calendar_events', $columns, [$dc->id], ['order' => 'tl_calendar_events.startTime DESC'])) {
+                    return $options;
+                }
+
+                $dateFormat = Config::get('dateFormat');
+
+                while ($events->next())
+                {
+                    $options[$events->id] = \sprintf(
+                        '%s (%s, ID %s)',
+                        $events->title,
+                        date($dateFormat, $events->startTime),
+                        $events->id,
+                    );
+                }
+
+                return $options;
+            },
+            'eval' => ['tl_class' => 'w50', 'includeBlankOption' => true, 'chosen' => true],
+            'sql' => "int(10) unsigned NOT NULL default '0'",
+        ];
+
+        $dca['fields']['alias']['eval']['tl_class'] = 'w50';
     }
 
     /**
-     * Checks a given event has sub events.
+     * Whether a given event has sub events.
      */
     public function hasSubEvents(int $eventId): bool
     {
@@ -237,29 +163,37 @@ class EventsManager
     }
 
     /**
-     * Retrieves the sub events for a given event.
+     * Retrieves the sub events of a given event.
      *
-     * @return mixed
+     * @return Collection<Model>|Model|Model[]|null
      */
-    public function getSubEvents(int $eventId, array $options = [])
+    public function getSubEvents(int $eventId, array $options = []): Collection|Model|array|null
     {
-        if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
-            $table = 'tl_calendar_sub_events';
-            $parentProperty = 'tl_calendar_events.pid';
-        } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
-            $table = 'tl_calendar_events';
-            $parentProperty = 'tl_calendar_events.parentEvent';
-        } else {
+        $subEventMode = Config::get('subEventMode');
+
+        $table = match ($subEventMode) {
+            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => 'tl_calendar_sub_events',
+            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => 'tl_calendar_events',
+            default => null,
+        };
+
+        $parentProperty = match ($subEventMode) {
+            CalendarSubEventsContainer::SUB_EVENT_MODE_ENTITY   => 'tl_calendar_events.id',
+            CalendarSubEventsContainer::SUB_EVENT_MODE_RELATION => 'tl_calendar_events.parentEvent',
+            default => null,
+        };
+
+        if (!$table || !$parentProperty) {
             return null;
         }
 
         $event = $this->eventDispatcher->dispatch(
             new BeforeGetSubEventsEvent($table, [$parentProperty.'=?'], [$eventId], $options),
-            BeforeGetSubEventsEvent::class
+            BeforeGetSubEventsEvent::class,
         );
 
-        return $this->modelUtil->findModelInstancesBy(
-            $event->getTable(), $event->getColumns(), $event->getValues(), $event->getOptions()
+        return $this->utils->model()->findModelInstancesBy(
+            $event->getTable(), $event->getColumns(), $event->getValues(), $event->getOptions(),
         );
     }
 }

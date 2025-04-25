@@ -6,10 +6,11 @@
  * @license LGPL-3.0-or-later
  */
 
-namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
+namespace HeimrichHannot\EventsBundle\DataContainer;
 
 use Contao\BackendUser;
 use Contao\Controller;
+use Contao\CoreBundle\DependencyInjection\Attribute\AsCallback;
 use Contao\CoreBundle\Exception\AccessDeniedException;
 use Contao\CoreBundle\Framework\FrameworkAwareInterface;
 use Contao\CoreBundle\Framework\FrameworkAwareTrait;
@@ -23,15 +24,17 @@ use Contao\Versions;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerAwareTrait;
 
-class ContentListener implements FrameworkAwareInterface, ContainerAwareInterface
+class ContentContainer implements FrameworkAwareInterface, ContainerAwareInterface
 {
     use FrameworkAwareTrait;
     use ContainerAwareTrait;
 
+    public const TABLE = 'tl_content';
+
     /**
      * Check permissions to edit table tl_content.
      */
-    public function checkPermission()
+    public function checkPermission(): void
     {
         $user = BackendUser::getInstance();
         $db = Database::getInstance();
@@ -99,22 +102,27 @@ class ContentListener implements FrameworkAwareInterface, ContainerAwareInterfac
 
     /**
      * Return the "toggle visibility" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
      */
-    public function toggleIcon($row, $href, $label, $title, $icon, $attributes)
-    {
+    public function toggleIcon(
+        array $row,
+        ?string $href,
+        string $label,
+        string $title,
+        ?string $icon,
+        string $attributes,
+        string $table,
+        array $rootRecordIds,
+        ?array $childRecordIds,
+        bool $circularReference,
+        ?string $previous,
+        ?string $next,
+        DataContainer $dc
+    ): string {
         $user = BackendUser::getInstance();
 
-        if (\strlen(Input::get('tid'))) {
-            $this->toggleVisibility(Input::get('tid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
+        if ($tid = Input::get('tid'))
+        {
+            $this->toggleVisibility($tid, '1' === (string) Input::get('state'), (@func_get_arg(12) ?: null));
             Controller::redirect(System::getReferer());
         }
 
@@ -139,7 +147,7 @@ class ContentListener implements FrameworkAwareInterface, ContainerAwareInterfac
      * @param bool          $blnVisible
      * @param DataContainer $dc
      */
-    public function toggleVisibility($intId, $blnVisible, DataContainer $dc = null)
+    public function toggleVisibility($intId, $blnVisible, DataContainer $dc = null): void
     {
         $user = BackendUser::getInstance();
         $db = Database::getInstance();
@@ -233,7 +241,7 @@ class ContentListener implements FrameworkAwareInterface, ContainerAwareInterfac
      *
      * @throws \Contao\CoreBundle\Exception\AccessDeniedException
      */
-    protected function checkAccessToElement($id, $root, $blnIsPid = false)
+    protected function checkAccessToElement($id, $root, $blnIsPid = false): void
     {
         $db = Database::getInstance();
 

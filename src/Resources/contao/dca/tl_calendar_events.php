@@ -6,16 +6,11 @@
  * @license LGPL-3.0-or-later
  */
 
+use HeimrichHannot\EventsBundle\Manager\EventsManager;
+
 $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
-System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarEventsDcaForSubEvents();
-
-/*
- * Callbacks
- */
-$dca['config']['onload_callback'][] = [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'modifyPalette'];
-$dca['config']['onsubmit_callback'][] = ['huh.utils.dca', 'setDateAdded'];
-$dca['config']['oncopy_callback'][] = ['huh.utils.dca', 'setDateAddedOnCopy'];
+System::getContainer()->get(EventsManager::class)->initCalendarEventsDcaForSubEvents();
 
 /**
  * Fields.
@@ -87,21 +82,6 @@ $fields = [
     ],
 ];
 
-$dca['fields'] = array_merge(is_array($dca['fields']) ? $dca['fields'] : [], $fields);
-
-// avoid backend handling of timestamps for frontend
-$dca['fields']['startTime']['load_callback'] = [
-    [
-        \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener::class,
-        'loadTime',
-    ],
-];
-
-$dca['fields']['endTime']['load_callback'] = [
-    [
-        \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener::class,
-        'loadTime',
-    ],
-];
+$dca['fields'] = \array_merge($dca['fields'] ?? [], $fields);
 
 $dca['fields']['location']['eval']['tl_class'] = 'w50';
