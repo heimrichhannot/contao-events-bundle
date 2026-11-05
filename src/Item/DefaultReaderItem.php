@@ -18,7 +18,7 @@ use Contao\Validator;
 use HeimrichHannot\HeadBundle\HeimrichHannotContaoHeadBundle;
 use HeimrichHannot\ReaderBundle\EventListener\HeadBundleListener;
 use HeimrichHannot\ReaderBundle\Item\DefaultItem;
-use HeimrichHannot\UtilsBundle\File\FileUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class DefaultReaderItem extends DefaultItem
 {
@@ -43,7 +43,7 @@ class DefaultReaderItem extends DefaultItem
         $image = $this->getFormattedValue('singleSRC');
 
         if (Validator::isBinaryUuid($image)) {
-            $image = System::getContainer()->get(FileUtil::class)->getPathFromUuid($image);
+            $image = System::getContainer()->get(Utils::class)->file()->getPathFromUuid($image);
         }
 
         if (!class_exists(HeimrichHannotContaoHeadBundle::class)) {
@@ -51,18 +51,18 @@ class DefaultReaderItem extends DefaultItem
         }
 
         $container->get('huh.head.tag.meta_robots')->setContent($article['robots'] ?: ($objPage->robots ?: 'index,follow'));
-        $container->get('huh.head.tag.meta_date')->setContent(Date::parse('c', $article['date']));
+        $container->get('huh.head.tag.meta_date')->setContent(Date::parse('c', $article['startTime']));
         $container->get('huh.head.tag.og_site_name')->setContent($objPage->rootPageTitle);
         $container->get('huh.head.tag.og_locale')->setContent($container->get('request_stack')->getCurrentRequest()->getLocale());
         $container->get('huh.head.tag.og_type')->setContent('article');
         $container->get('huh.head.tag.og_title')->setContent(StringUtil::stripInsertTags($article['title']));
-        $container->get('huh.head.tag.og_description')->setContent(str_replace("\n", ' ', strip_tags(Controller::replaceInsertTags($article['teaser']))));
+        $container->get('huh.head.tag.og_description')->setContent(str_replace("\n", ' ', strip_tags(System::getContainer()->get('contao.insert_tag.parser')->replace($article['teaser']))));
 
         if ($article['addImage']) {
             $container->get('huh.head.tag.og_image')->setContent(Environment::get('url').'/'.$image);
         }
 
-        $title = !$article['pageTitle'] ? StringUtil::stripInsertTags($article['pageTitle']) : StringUtil::stripInsertTags($article['title'].' - '.$objPage->rootPageTitle);
+        $title = $article['pageTitle'] ? StringUtil::stripInsertTags($article['pageTitle']) : StringUtil::stripInsertTags($article['title'].' - '.$objPage->rootPageTitle);
         $container->get('huh.head.tag.meta_title')->setContent($title);
 
         //Overwrite the page title
@@ -73,8 +73,8 @@ class DefaultReaderItem extends DefaultItem
         $description = '';
 
         // Overwrite the page description
-        if ('' != $article['metaDescription']) {
-            $description = $article['metaDescription'];
+        if ('' != $article['description']) {
+            $description = $article['description'];
         } else {
             if ('' != $article['teaser']) {
                 $description = $article['teaser'];
@@ -85,7 +85,7 @@ class DefaultReaderItem extends DefaultItem
             $container->get('huh.head.tag.meta_description')->setContent($this->prepareMetaDescription($description));
         }
 
-        $keywords = StringUtil::deserialize($article['metaKeywords'], true);
+        $keywords = StringUtil::deserialize(($article['metaKeywords'] ?? null), true);
 
         if (!empty($keywords)) {
             // keywords should be delimited by comma with space(see https://github.com/contao/core-bundle/issues/1078)
@@ -93,7 +93,7 @@ class DefaultReaderItem extends DefaultItem
         }
 
         // twitter card
-        if ($article['twitterCard']) {
+        if ($article['twitterCard'] ?? false) {
             $container->get('huh.head.tag.twitter_card')->setContent($article['twitterCard']);
 
             if ($objPage->rootId > 0 && null !== ($rootPage = PageModel::findByPk($objPage->rootId)) && $rootPage->twitterSite) {
@@ -118,7 +118,7 @@ class DefaultReaderItem extends DefaultItem
                 }
             }
 
-            if ($article['addYoutube']) {
+            if ($article['addYoutube'] ?? false) {
                 $container->get('huh.head.tag.twitter_player')->setContent('https://www.youtube.com/embed/'.$article['youtube']);
                 $container->get('huh.head.tag.twitter_player_width')->setContent(480);
                 $container->get('huh.head.tag.twitter_player_height')->setContent(300);
@@ -135,7 +135,7 @@ class DefaultReaderItem extends DefaultItem
      */
     protected function prepareMetaDescription($strText)
     {
-        $strText = Controller::replaceInsertTags($strText, false);
+        $strText = System::getContainer()->get('contao.insert_tag.parser')->replace($strText, false);
         $strText = strip_tags($strText);
         $strText = str_replace("\n", ' ', $strText);
         $strText = StringUtil::substr($strText, 320);

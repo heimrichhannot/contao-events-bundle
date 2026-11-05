@@ -1,151 +1,78 @@
 <?php
 
-/*
- * Copyright (c) 2021 Heimrich & Hannot GmbH
- *
- * @license LGPL-3.0-or-later
- */
-
 namespace HeimrichHannot\EventsBundle\EventListener\DataContainer;
 
-use Contao\BackendUser;
-use Contao\Controller;
-use Contao\CoreBundle\Exception\AccessDeniedException;
-use Contao\CoreBundle\Framework\ContaoFrameworkInterface;
-use Contao\Database;
+use Contao\Backend;
 use Contao\DataContainer;
 use Contao\Image;
-use Contao\Input;
 use Contao\StringUtil;
 use Contao\System;
-use Contao\Versions;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
-use HeimrichHannot\EventsBundle\Model\CalendarEventsModel;
-use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
-use HeimrichHannot\UtilsBundle\Date\DateUtil;
-use HeimrichHannot\UtilsBundle\Dca\DcaUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\ModelUtil;
 
 class CalendarEventsListener
 {
-    /**
-     * @var DateUtil
-     */
-    protected $dateUtil;
-    /**
-     * @var DcaUtil
-     */
-    protected $dcaUtil;
-    /**
-     * @var ContainerUtil
-     */
-    protected $containerUtil;
-    /**
-     * @var ModelUtil
-     */
-    protected $modelUtil;
-    /**
-     * @var ContaoFrameworkInterface
-     */
-    protected $framework;
-    /**
-     * @var EventsManager
-     */
-    protected $eventsManager;
+    private ?DataContainer $dataContainer = null;
 
-    public function __construct(ContaoFrameworkInterface $framework, DateUtil $dateUtil, DcaUtil $dcaUtil, ContainerUtil $containerUtil, ModelUtil $modelUtil, EventsManager $eventsManager)
+    public function onLoad(DataContainer $dc): void
     {
-        $this->framework = $framework;
-        $this->dateUtil = $dateUtil;
-        $this->dcaUtil = $dcaUtil;
-        $this->containerUtil = $containerUtil;
-        $this->modelUtil = $modelUtil;
-        $this->eventsManager = $eventsManager;
+        $this->dataContainer = $dc;
     }
 
-    public function listEvents($row)
+    public function __construct(private EventsManager $eventsManager, private ModelUtil $modelUtil)
     {
-        $date = $this->dateUtil->getFormattedDateTime(
-            $row['startDate'],
-            $row['endDate'],
-            $row['addTime'],
-            $row['startTime'],
-            $row['endTime']
-            );
-
-        return '<div class="tl_content_left">'.$row['title'].' <span style="color:#999;padding-left:3px">['.$date.']</span>'.
-            $this->getSubEventsForBackendList($row['id'])
-            .'</div>';
     }
 
-    public function getSubEventsForBackendList(int $id)
+    public function listEvents(array $row): string
     {
-        // retrieve sub events
-        $subEvents = '';
+        $formatter = System::importStatic('tl_calendar_events');
+        $html = $formatter->listEvents($row);
+        $events = $this->eventsManager->getSubEvents((int) $row['id']);
 
-        if (null !== ($events = $this->eventsManager->getSubEvents($id))) {
-            while ($events->next()) {
-                $subEventRow = $events->row();
-
-                $date = $this->dateUtil->getFormattedDateTimeByEvent($events->current());
-
-                $subEvents .= System::getContainer()->get('twig')->render(
-                    '@HeimrichHannotContaoEvents/subevent_dc_default.twig', [
-                        'row' => $subEventRow,
-                        'date' => $date,
-                        'operations' => $this->dcaUtil->generateDcOperationsButtons($subEventRow, 'tl_calendar_events', [], [
-                            'skipOperations' => ['cut', 'copy'],
-                        ]),
-                    ]
-                );
+        if (null !== $events) {
+            foreach ($events as $event) {
+                $url = Backend::addToUrl('act=edit&id='.$event->id);
+                $operations = '<a href="'.$url.'" title="'.StringUtil::specialchars($event->title).'">'.Image::getHtml('edit.svg', $event->title).'</a>';
+                if ($this->dataContainer) {
+                    // Reuse Contao's permission-aware operation renderer for nested rows.
+                    $operations = (function (array $row): string {
+                        $original = $GLOBALS['TL_DCA']['tl_calendar_events']['list']['operations'];
+                        $GLOBALS['TL_DCA']['tl_calendar_events']['list']['operations'] = array_filter(
+                            $original,
+                            static fn ($value, $key) => !in_array(is_int($key) ? $value : $key, ['cut', 'copy'], true),
+                            ARRAY_FILTER_USE_BOTH
+                        );
+                        try {
+                            return $this->generateButtons($row, 'tl_calendar_events');
+                        } finally {
+                            $GLOBALS['TL_DCA']['tl_calendar_events']['list']['operations'] = $original;
+                        }
+                    })->call($this->dataContainer, $event->row());
+                }
+                $html .= '<div class="tl_content"><div class="tl_content_right">'.$operations.'</div>'.$formatter->listEvents($event->row()).'</div>';
             }
         }
 
-        return $subEvents;
+        return $html;
     }
 
-    public function checkForSubEvents(DataContainer $dc)
+    public function checkForSubEvents(DataContainer $dc): void
     {
-        /* @var CalendarEventsModel $adapter */
-        if (null === ($adapter = $this->framework->getAdapter(CalendarEventsModel::class)) || !$dc->id) {
-            return;
-        }
-
-        if ($this->eventsManager->hasSubEvents((int) ($dc->id))) {
-            $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
-
-            unset($dca['fields']['parentEvent']);
+        if ($dc->id && $this->eventsManager->hasSubEvents((int) $dc->id)) {
+            unset($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['parentEvent']);
         }
     }
 
-    /**
-     * Set the timestamp to 1970-01-01 (see #26).
-     *
-     * @param int $value
-     *
-     * @return int
-     */
     public function loadTime($value)
     {
-        if ($this->containerUtil->isFrontend()) {
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        if (!$request || !System::getContainer()->get('contao.routing.scope_matcher')->isBackendRequest($request)) {
             return $value;
         }
 
-        return strtotime('1970-01-01 '.date('H:i:s', $value));
+        return strtotime('1970-01-01 '.date('H:i:s', (int) $value));
     }
 
-    /**
-     * Return the "subevents" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
     public function iconSubEvents($row, $href, $label, $title, $icon, $attributes)
     {
         $subEvents = $this->modelUtil->findModelInstancesBy('tl_calendar_sub_events', ['pid=?'], [$row['id']]);
@@ -154,7 +81,7 @@ class CalendarEventsListener
 
         $href .= '&id='.$row['id'];
 
-        return '<a href="'.Controller::addToUrl($href, true, ['id']).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+        return '<a href="'.Backend::addToUrl($href, true, ['id']).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
     }
 
     /**
@@ -172,199 +99,13 @@ class CalendarEventsListener
     public function iconCreateSubEvent($row, $href, $label, $title, $icon, $attributes)
     {
         /* @var CalendarEventsModel $adapter */
-        if ($row['parentEvent'] > 0) {
+        if (($row['parentEvent'] ?? 0) > 0) {
             return '';
         }
 
-        $href .= '&pid='.\Input::get('id').'&parentEvent='.$row['id'].'&rt='.\RequestToken::get();
+        $href .= '&pid='.$row['pid'].'&parentEvent='.$row['id'];
 
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
+        return '<a href="'.Backend::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label).'</a> ';
     }
 
-    /**
-     * Return the "feature/unfeature element" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
-    public function iconFeatured($row, $href, $label, $title, $icon, $attributes)
-    {
-        $user = BackendUser::getInstance();
-
-        if (\strlen(Input::get('fid'))) {
-            $this->toggleFeatured(Input::get('fid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
-            Controller::redirect(System::getReferer());
-        }
-
-        // Check permissions AFTER checking the fid, so hacking attempts are logged
-        if (!$user->hasAccess('tl_calendar_events::featured', 'alexf')) {
-            return '';
-        }
-
-        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
-
-        if (!$row['featured']) {
-            $icon = 'featured_.svg';
-        }
-
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
-    }
-
-    /**
-     * Feature/unfeature a calendar event.
-     *
-     * @param int           $intId
-     * @param bool          $blnVisible
-     * @param DataContainer $dc
-     *
-     * @throws \Contao\CoreBundle\Exception\AccessDeniedException
-     */
-    public function toggleFeatured($intId, $blnVisible, DataContainer $dc = null)
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        // Check permissions to edit
-        Input::setGet('id', $intId);
-        Input::setGet('act', 'feature');
-        $this->checkPermission();
-
-        // Check permissions to feature
-        if (!$user->hasAccess('tl_calendar_events::featured', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$intId.'.');
-        }
-
-        $objVersions = new Versions('tl_calendar_events', $intId);
-        $objVersions->initialize();
-
-        // Trigger the save_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_events']['fields']['featured']['save_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
-                } elseif (\is_callable($callback)) {
-                    $blnVisible = $callback($blnVisible, $this);
-                }
-            }
-        }
-
-        // Update the database
-        $db->prepare('UPDATE tl_calendar_events SET tstamp='.time().", featured='".($blnVisible ? 1 : '')."' WHERE id=?")
-            ->execute($intId);
-
-        $objVersions->create();
-    }
-
-    /**
-     * Check permissions to edit table tl_calendar_events.
-     *
-     * @throws \Contao\CoreBundle\Exception\AccessDeniedException
-     */
-    public function checkPermission()
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-        $bundles = System::getContainer()->getParameter('kernel.bundles');
-
-        // HOOK: comments extension required
-        if (!isset($bundles['ContaoCommentsBundle'])) {
-            $key = array_search('allowComments', $GLOBALS['TL_DCA']['tl_calendar_events']['list']['sorting']['headerFields']);
-            unset($GLOBALS['TL_DCA']['tl_calendar_events']['list']['sorting']['headerFields'][$key]);
-        }
-
-        if ($user->isAdmin) {
-            return;
-        }
-
-        // Set root IDs
-        if (empty($user->calendars) || !\is_array($user->calendars)) {
-            $root = [0];
-        } else {
-            $root = $user->calendars;
-        }
-
-        $id = \strlen(Input::get('id')) ? Input::get('id') : CURRENT_ID;
-
-        // Check current action
-        switch (Input::get('act')) {
-            case 'paste':
-                // Allow
-                break;
-
-            case 'create':
-                if (!\strlen(Input::get('pid')) || !\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to create events in calendar ID '.Input::get('pid').'.');
-                }
-
-                break;
-
-            case 'cut':
-            case 'copy':
-                if (!\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' to calendar ID '.Input::get('pid').'.');
-                }
-            // no break STATEMENT HERE
-
-            case 'edit':
-            case 'show':
-            case 'delete':
-            case 'toggle':
-            case 'feature':
-                $objCalendar = $db->prepare('SELECT pid FROM tl_calendar_events WHERE id=?')
-                    ->limit(1)
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid event ID '.$id.'.');
-                }
-
-                if (!\in_array($objCalendar->pid, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' of calendar ID '.$objCalendar->pid.'.');
-                }
-
-                break;
-
-            case 'select':
-            case 'editAll':
-            case 'deleteAll':
-            case 'overrideAll':
-            case 'cutAll':
-            case 'copyAll':
-                if (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                $objCalendar = $db->prepare('SELECT id FROM tl_calendar_events WHERE pid=?')
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid calendar ID '.$id.'.');
-                }
-
-                /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
-                $objSession = System::getContainer()->get('session');
-
-                $session = $objSession->all();
-                $session['CURRENT']['IDS'] = array_intersect((array) $session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
-                $objSession->replace($session);
-
-                break;
-
-            default:
-                if (\strlen(Input::get('act'))) {
-                    throw new AccessDeniedException('Invalid command "'.Input::get('act').'".');
-                } elseif (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                break;
-        }
-    }
 }

@@ -10,7 +10,6 @@ namespace HeimrichHannot\EventsBundle\Model;
 
 use Contao\System;
 use HeimrichHannot\EventsBundle\Manager\EventsManager;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
 
 class CalendarEventsModel extends \Contao\CalendarEventsModel
 {
@@ -45,10 +44,10 @@ class CalendarEventsModel extends \Contao\CalendarEventsModel
         $columns = !is_numeric($varId) ? ["$t.alias=?"] : ["$t.id=?"];
 
         if (!static::isPreviewMode($options)) {
-            $time = \Date::floorToMinute();
+            $time = \Contao\Date::floorToMinute();
             $columns[] = "($t.start='' OR $t.start<='$time') AND ($t.stop='' OR $t.stop>'".($time + 60)."') AND $t.published='1'";
         }
 
-        return System::getContainer()->get(ModelUtil::class)->callModelMethod('tl_calendar_events', 'findOneBy', $columns, $varId, $options);
+        return static::findOneBy($columns, $varId, $options);
     }
 }

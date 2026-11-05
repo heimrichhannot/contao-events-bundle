@@ -17,7 +17,7 @@ use Contao\ManagerPlugin\Config\ConfigPluginInterface;
 use Contao\ManagerPlugin\Config\ContainerBuilder;
 use Contao\ManagerPlugin\Config\ExtensionPluginInterface;
 use HeimrichHannot\EventsBundle\HeimrichHannotContaoEventsBundle;
-use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
+use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Config\Loader\LoaderInterface;
 
 class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionPluginInterface
@@ -31,6 +31,7 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
             BundleConfig::create(HeimrichHannotContaoEventsBundle::class)->setLoadAfter([
                 ContaoCoreBundle::class,
                 ContaoCalendarBundle::class,
+                \HeimrichHannot\UtilsBundle\HeimrichHannotUtilsBundle::class,
             ]),
         ];
     }
@@ -45,14 +46,14 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
      */
     public function getExtensionConfig($extensionName, array $extensionConfigs, ContainerBuilder $container)
     {
-        $extensionConfigs = ContainerUtil::mergeConfigFile(
+        $extensionConfigs = $this->mergeConfigFile(
             'huh_list',
             $extensionName,
             $extensionConfigs,
             __DIR__.'/../Resources/config/config_list.yml'
         );
 
-        $extensionConfigs = ContainerUtil::mergeConfigFile(
+        $extensionConfigs = $this->mergeConfigFile(
             'huh_reader',
             $extensionName,
             $extensionConfigs,
@@ -60,5 +61,14 @@ class Plugin implements BundlePluginInterface, ConfigPluginInterface, ExtensionP
         );
 
         return $extensionConfigs;
+    }
+
+    private function mergeConfigFile(string $alias, string $extensionName, array $configs, string $file): array
+    {
+        if ($alias === $extensionName) {
+            $configs = array_merge_recursive($configs, Yaml::parseFile($file));
+        }
+
+        return $configs;
     }
 }

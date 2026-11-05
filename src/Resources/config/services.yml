@@ -2,6 +2,7 @@ services:
   _defaults:
     public: true
     autowire: true
+    autoconfigure: true
 
   HeimrichHannot\EventsBundle\:
-    resource: '../../{DataContainer,EventListener,Manager}/*'
+    resource: '../../{DataContainer,EventListener,Manager,Security}/*'

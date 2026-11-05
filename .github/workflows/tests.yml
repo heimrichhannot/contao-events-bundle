@@ -1,0 +1,19 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, gd, pdo_mysql
+          coverage: none
+      - run: composer --no-plugins validate --strict
+      - run: composer update --no-interaction --no-plugins --no-scripts --with 'contao/core-bundle:5.3.*' --with 'contao/calendar-bundle:5.3.*'
+      - run: vendor/bin/phpunit
+      - run: php tests/smoke.php

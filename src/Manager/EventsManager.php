@@ -15,8 +15,7 @@ use Contao\System;
 use HeimrichHannot\EventsBundle\Event\BeforeGetSubEventsEvent;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarEventsListener;
 use HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener;
-use HeimrichHannot\UtilsBundle\Arrays\ArrayUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\ModelUtil;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class EventsManager
@@ -26,18 +25,13 @@ class EventsManager
      */
     protected $modelUtil;
     /**
-     * @var ArrayUtil
-     */
-    protected $arrayUtil;
-    /**
      * @var EventDispatcherInterface
      */
     protected $eventDispatcher;
 
-    public function __construct(ModelUtil $modelUtil, ArrayUtil $arrayUtil, EventDispatcherInterface $eventDispatcher)
+    public function __construct(ModelUtil $modelUtil, EventDispatcherInterface $eventDispatcher)
     {
         $this->modelUtil = $modelUtil;
-        $this->arrayUtil = $arrayUtil;
         $this->eventDispatcher = $eventDispatcher;
     }
 
@@ -81,6 +75,8 @@ class EventsManager
          * Config
          */
         $dca['config']['ptable'] = 'tl_calendar_events';
+        $dca['config']['ctable'] = ['tl_content'];
+        $dca['list']['sorting']['headerFields'] = ['title', 'startDate', 'endDate'];
 
         /*
          * List
@@ -88,20 +84,23 @@ class EventsManager
         // there are no sub-sub-events
         unset($dca['list']['operations']['subevents']);
 
-        $dca['list']['operations']['edit']['href'] = 'do=calendar_subevents&table=tl_content';
-        $dca['list']['operations']['toggle']['button_callback'] = [CalendarSubEventsListener::class, 'toggleIcon'];
-        $dca['list']['operations']['feature']['button_callback'] = [CalendarSubEventsListener::class, 'iconFeatured'];
+        foreach ($dca['list']['operations'] as $key => $operation) {
+            if ('children' === $operation) {
+                unset($dca['list']['operations'][$key]);
+            }
+        }
+        $dca['list']['operations']['children'] = ['href' => 'do=calendar_subevents&table=tl_content'];
         $dca['list']['sorting']['child_record_callback'] = [CalendarSubEventsListener::class, 'listEvents'];
 
         /*
          * Callbacks
          */
         // Reset callbacks to core default
-        $dca['config']['onload_callback'] = [
-            [CalendarSubEventsListener::class, 'checkPermission'],
-        ];
+        $dca['config']['onload_callback'] = [];
 
+        unset($dca['config']['oncut_callback'], $dca['config']['ondelete_callback'], $dca['config']['oninvalidate_cache_tags_callback']);
         $dca['config']['onsubmit_callback'] = [
+            [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'setDateAdded'],
             [CalendarSubEventsListener::class, 'adjustTime'],
         ];
 
@@ -114,7 +113,6 @@ class EventsManager
         $dca['fields']['endTime']['load_callback'] = [[CalendarSubEventsListener::class, 'loadTime']];
         $dca['fields']['endTime']['save_callback'] = [[CalendarSubEventsListener::class, 'setEmptyEndTime']];
         $dca['fields']['source']['options_callback'] = [CalendarSubEventsListener::class, 'getSourceOptions'];
-        $dca['fields']['articleId']['options_callback'] = [CalendarSubEventsListener::class, 'getArticleAlias'];
         $dca['fields']['serpPreview']['eval']['url_callback'] = [CalendarSubEventsListener::class, 'getSerpUrl'];
         $dca['fields']['serpPreview']['eval']['title_tag_callback'] = [CalendarSubEventsListener::class, 'getTitleTag'];
     }
@@ -127,35 +125,19 @@ class EventsManager
             /*
              * Operations
              */
+            $dca['config']['ctable'][] = 'tl_calendar_sub_events';
             $dca['list']['operations']['subevents'] = [
                 'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['subevents'],
-                'href' => 'table=tl_calendar_sub_events',
+                'href' => 'do=calendar_subevents&table=tl_calendar_sub_events',
                 'button_callback' => [CalendarEventsListener::class, 'iconSubEvents'],
             ];
-
-            /**
-             * Callbacks.
-             */
-            $callbacks = [];
-
-            foreach ($dca['config']['onload_callback'] as $callback) {
-                if ('checkPermission' === $callback[1]) {
-                    $callbacks[] = [CalendarEventsListener::class, 'checkPermission'];
-
-                    continue;
-                }
-
-                $callbacks[] = $callback;
-            }
-
-            $dca['config']['onload_callback'] = $callbacks;
         } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
             /*
              * List
              */
             // hide child elements
             $dca['config']['onload_callback'][] = function (DataContainer $dc) use (&$dca) {
-                if ('calendar' === \Input::get('do') && null !== ($subEvents = $this->modelUtil->findModelInstancesBy(
+                if ('calendar' === \Contao\Input::get('do') && null !== ($subEvents = $this->modelUtil->findModelInstancesBy(
                         'tl_calendar_events', ['tl_calendar_events.parentEvent = 0'], []))) {
                     foreach ($subEvents->fetchEach('id') as $id) {
                         $dca['list']['sorting']['root'][] = $id;
@@ -165,21 +147,17 @@ class EventsManager
 
             // `child_record_callback` doesn't resolve plain service title so use System::getContainer or class name
             $dca['list']['sorting']['child_record_callback'] = [CalendarEventsListener::class, 'listEvents'];
+            $dca['config']['onload_callback'][] = [CalendarEventsListener::class, 'onLoad'];
 
             /*
              * Operations
              */
-            $this->arrayUtil->insertInArrayByName(
-                $dca['list']['operations'],
-                'copy', [
-                'create_sub_event' => [
+            $dca['list']['operations']['create_sub_event'] = [
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['create_sub_event'],
                     'icon' => 'new.svg',
                     'href' => 'act=create&mode=2',
                     'button_callback' => [CalendarEventsListener::class, 'iconCreateSubEvent'],
-                ],
-            ], 1
-            );
+                ];
 
             /*
              * Callbacks
@@ -199,7 +177,7 @@ class EventsManager
                     'label' => &$GLOBALS['TL_LANG']['tl_calendar_events']['parentEvent'],
                     'exclude' => true,
                     'filter' => true,
-                    'default' => \Input::get('parentEvent') ?: 0,
+                    'default' => \Contao\Input::get('parentEvent') ?: 0,
                     'inputType' => 'select',
                     'options_callback' => function (DataContainer $dc) {
                         $options = [];
@@ -245,7 +223,7 @@ class EventsManager
     {
         if (CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY === Config::get('subEventMode')) {
             $table = 'tl_calendar_sub_events';
-            $parentProperty = 'tl_calendar_events.pid';
+            $parentProperty = 'tl_calendar_sub_events.pid';
         } elseif (CalendarSubEventsListener::SUB_EVENT_MODE_RELATION === Config::get('subEventMode')) {
             $table = 'tl_calendar_events';
             $parentProperty = 'tl_calendar_events.parentEvent';

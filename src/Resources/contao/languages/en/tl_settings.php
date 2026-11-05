@@ -21,3 +21,4 @@ $lang['reference']['eventsBundle'] = [
     \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_ENTITY => 'Realization as an entity "tl_calendar_sub_events"',
     \HeimrichHannot\EventsBundle\EventListener\DataContainer\CalendarSubEventsListener::SUB_EVENT_MODE_RELATION => 'Realization using a parent-child-relation'
 ];
+$GLOBALS['TL_LANG']['tl_settings']['utilsGoogleApiKey'] = ['Google Maps API key', 'API key for automatic event coordinates.'];

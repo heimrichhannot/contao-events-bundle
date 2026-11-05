@@ -12,21 +12,17 @@ use Contao\BackendUser;
 use Contao\Calendar;
 use Contao\Config;
 use Contao\Controller;
-use Contao\CoreBundle\Exception\AccessDeniedException;
 use Contao\Database;
 use Contao\DataContainer;
 use Contao\Date;
 use Contao\Events;
-use Contao\Image;
-use Contao\Input;
 use Contao\LayoutModel;
 use Contao\PageModel;
 use Contao\StringUtil;
 use Contao\System;
-use Contao\Versions;
 use HeimrichHannot\EventsBundle\Model\CalendarSubEventsModel;
-use HeimrichHannot\UtilsBundle\Container\ContainerUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\ContainerUtil;
+use HeimrichHannot\UtilsBundle\Util\ModelUtil;
 
 class CalendarSubEventsListener
 {
@@ -48,48 +44,16 @@ class CalendarSubEventsListener
     }
 
     /**
-     * Return the "feature/unfeature element" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
-    public function iconFeatured($row, $href, $label, $title, $icon, $attributes)
-    {
-        $user = BackendUser::getInstance();
-
-        if (\strlen(Input::get('fid'))) {
-            $this->toggleFeatured(Input::get('fid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
-            Controller::redirect(System::getReferer());
-        }
-
-        // Check permissions AFTER checking the fid, so hacking attempts are logged
-        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
-            return '';
-        }
-
-        $href .= '&amp;fid='.$row['id'].'&amp;state='.($row['featured'] ? '' : 1);
-
-        if (!$row['featured']) {
-            $icon = 'featured_.svg';
-        }
-
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['featured'] ? 1 : 0).'"').'</a> ';
-    }
-
-    /**
      * Return the SERP URL.
      *
      * @return string
      */
     public function getSerpUrl(CalendarSubEventsModel $model)
     {
-        return Events::generateEventUrl($model, true);
+        // A sub-event belongs to an event, not directly to a calendar.
+        $parent = $this->modelUtil->findModelInstanceByPk('tl_calendar_events', $model->pid);
+
+        return $parent ? Events::generateEventUrl($parent, true) : '';
     }
 
     /**
@@ -99,7 +63,7 @@ class CalendarSubEventsListener
      */
     public function getTitleTag(CalendarSubEventsModel $model)
     {
-        if (null === ($event = $this->modelUtil->findModelInstanceByPk('tl_calendar', $model->pid))) {
+        if (null === ($event = $this->modelUtil->findModelInstanceByPk('tl_calendar_events', $model->pid))) {
             return '';
         }
 
@@ -122,161 +86,12 @@ class CalendarSubEventsListener
         global $objPage;
 
         // Set the global page object so we can replace the insert tags
+        $originalPage = $objPage;
         $objPage = $page;
-
-        return Controller::replaceInsertTags(str_replace('{{page::pageTitle}}', '%s', $layout->titleTag ?: '{{page::pageTitle}} - {{page::rootPageTitle}}'));
-    }
-
-    /**
-     * Feature/unfeature a calendar event.
-     *
-     * @param int           $intId
-     * @param bool          $blnVisible
-     * @param DataContainer $dc
-     *
-     * @throws \Contao\CoreBundle\Exception\AccessDeniedException
-     */
-    public function toggleFeatured($intId, $blnVisible, DataContainer $dc = null)
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        // Check permissions to edit
-        Input::setGet('id', $intId);
-        Input::setGet('act', 'feature');
-        $this->checkPermission();
-
-        // Check permissions to feature
-        if (!$user->hasAccess('tl_calendar_sub_events::featured', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to feature/unfeature calendar_event ID '.$intId.'.');
-        }
-
-        $objVersions = new Versions('tl_calendar_sub_events', $intId);
-        $objVersions->initialize();
-
-        // Trigger the save_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['featured']['save_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
-                } elseif (\is_callable($callback)) {
-                    $blnVisible = $callback($blnVisible, $this);
-                }
-            }
-        }
-
-        // Update the database
-        $db->prepare('UPDATE tl_calendar_sub_events SET tstamp='.time().", featured='".($blnVisible ? 1 : '')."' WHERE id=?")
-            ->execute($intId);
-
-        $objVersions->create();
-    }
-
-    /**
-     * Check permissions to edit table tl_calendar_sub_events.
-     *
-     * @throws AccessDeniedException
-     */
-    public function checkPermission()
-    {
-        $bundles = System::getContainer()->getParameter('kernel.bundles');
-
-        // HOOK: comments extension required
-        if (!isset($bundles['ContaoCommentsBundle'])) {
-            $key = array_search('allowComments', $GLOBALS['TL_DCA']['tl_calendar_sub_events']['list']['sorting']['headerFields']);
-            unset($GLOBALS['TL_DCA']['tl_calendar_sub_events']['list']['sorting']['headerFields'][$key]);
-        }
-
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        if ($user->isAdmin) {
-            return;
-        }
-
-        // Set root IDs
-        if (empty($user->calendars) || !\is_array($user->calendars)) {
-            $root = [0];
-        } else {
-            $root = $user->calendars;
-        }
-
-        $id = \strlen(Input::get('id')) ? Input::get('id') : CURRENT_ID;
-
-        // Check current action
-        switch (Input::get('act')) {
-            case 'paste':
-                // Allow
-                break;
-
-            case 'create':
-                if (!\strlen(Input::get('pid')) || !\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to create events in calendar ID '.Input::get('pid').'.');
-                }
-
-                break;
-
-            case 'cut':
-            case 'copy':
-                if (!\in_array(Input::get('pid'), $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' to calendar ID '.Input::get('pid').'.');
-                }
-            // no break STATEMENT HERE
-
-            case 'edit':
-            case 'show':
-            case 'delete':
-            case 'toggle':
-            case 'feature':
-                $objCalendar = $db->prepare('SELECT pid FROM tl_calendar_sub_events WHERE id=?')
-                    ->limit(1)
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid event ID '.$id.'.');
-                }
-
-                if (!\in_array($objCalendar->pid, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to '.Input::get('act').' event ID '.$id.' of calendar ID '.$objCalendar->pid.'.');
-                }
-
-                break;
-
-            case 'select':
-            case 'editAll':
-            case 'deleteAll':
-            case 'overrideAll':
-            case 'cutAll':
-            case 'copyAll':
-                if (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                $objCalendar = $db->prepare('SELECT id FROM tl_calendar_sub_events WHERE pid=?')
-                    ->execute($id);
-
-                if ($objCalendar->numRows < 1) {
-                    throw new AccessDeniedException('Invalid calendar ID '.$id.'.');
-                }
-
-                /** @var \Symfony\Component\HttpFoundation\Session\SessionInterface $objSession */
-                $objSession = System::getContainer()->get('session');
-
-                $session = $objSession->all();
-                $session['CURRENT']['IDS'] = array_intersect((array) $session['CURRENT']['IDS'], $objCalendar->fetchEach('id'));
-                $objSession->replace($session);
-
-                break;
-
-            default:
-                if (\strlen(Input::get('act'))) {
-                    throw new AccessDeniedException('Invalid command "'.Input::get('act').'".');
-                } elseif (!\in_array($id, $root)) {
-                    throw new AccessDeniedException('Not enough permissions to access calendar ID '.$id.'.');
-                }
-
-                break;
+        try {
+            return System::getContainer()->get('contao.insert_tag.parser')->replace(str_replace('{{page::pageTitle}}', '%s', $layout->titleTag ?: '{{page::pageTitle}} - {{page::rootPageTitle}}'));
+        } finally {
+            $objPage = $originalPage;
         }
     }
 
@@ -328,7 +143,7 @@ class CalendarSubEventsListener
             return $value;
         }
 
-        return strtotime('1970-01-01 '.date('H:i:s', $value));
+        return strtotime('1970-01-01 '.date('H:i:s', (int) $value));
     }
 
     /**
@@ -454,7 +269,7 @@ class CalendarSubEventsListener
     public function adjustTime(DataContainer $dc)
     {
         // Return if there is no active record (override all)
-        if (!$dc->activeRecord) {
+        if (!$dc->activeRecord?->startDate) {
             return;
         }
 
@@ -489,7 +304,7 @@ class CalendarSubEventsListener
         if ($dc->activeRecord->recurring) {
             // Unlimited recurrences end on 2038-01-01 00:00:00 (see #4862)
             if (0 == $dc->activeRecord->recurrences) {
-                $arrSet['repeatEnd'] = 2145913200;
+                $arrSet['repeatEnd'] = min(4294967295, PHP_INT_MAX);
             } else {
                 $arrRange = StringUtil::deserialize($dc->activeRecord->repeatEach);
 
@@ -506,129 +321,4 @@ class CalendarSubEventsListener
         $db->prepare('UPDATE tl_calendar_sub_events %s WHERE id=?')->set($arrSet)->execute($dc->id);
     }
 
-    /**
-     * Return the "toggle visibility" button.
-     *
-     * @param array  $row
-     * @param string $href
-     * @param string $label
-     * @param string $title
-     * @param string $icon
-     * @param string $attributes
-     *
-     * @return string
-     */
-    public function toggleIcon($row, $href, $label, $title, $icon, $attributes)
-    {
-        if (\strlen(Input::get('tid'))) {
-            $this->toggleVisibility(Input::get('tid'), (1 == Input::get('state')), (@func_get_arg(12) ?: null));
-            Controller::redirect(Controller::getReferer());
-        }
-
-        $user = BackendUser::getInstance();
-
-        // Check permissions AFTER checking the tid, so hacking attempts are logged
-        if (!$user->hasAccess('tl_calendar_sub_events::published', 'alexf')) {
-            return '';
-        }
-
-        $href .= '&amp;tid='.$row['id'].'&amp;state='.($row['published'] ? '' : 1);
-
-        if (!$row['published']) {
-            $icon = 'invisible.svg';
-        }
-
-        return '<a href="'.Controller::addToUrl($href).'" title="'.StringUtil::specialchars($title).'"'.$attributes.'>'.Image::getHtml($icon, $label, 'data-state="'.($row['published'] ? 1 : 0).'"').'</a> ';
-    }
-
-    /**
-     * Disable/enable a user group.
-     *
-     * @param int           $intId
-     * @param bool          $blnVisible
-     * @param DataContainer $dc
-     *
-     * @throws AccessDeniedException
-     */
-    public function toggleVisibility($intId, $blnVisible, DataContainer $dc = null)
-    {
-        $user = BackendUser::getInstance();
-        $db = Database::getInstance();
-
-        // Set the ID and action
-        Input::setGet('id', $intId);
-        Input::setGet('act', 'toggle');
-
-        if ($dc) {
-            $dc->id = $intId; // see #8043
-        }
-
-        // Trigger the onload_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['config']['onload_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['config']['onload_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $obj->{$callback[1]}($dc);
-                } elseif (\is_callable($callback)) {
-                    $callback($dc);
-                }
-            }
-        }
-
-        // Check the field access
-        if (!$user->hasAccess('tl_calendar_sub_events::published', 'alexf')) {
-            throw new AccessDeniedException('Not enough permissions to publish/unpublish event ID '.$intId.'.');
-        }
-
-        // Set the current record
-        if ($dc) {
-            $objRow = $db->prepare('SELECT * FROM tl_calendar_sub_events WHERE id=?')
-                ->limit(1)
-                ->execute($intId);
-
-            if ($objRow->numRows) {
-                $dc->activeRecord = $objRow;
-            }
-        }
-
-        $objVersions = new Versions('tl_calendar_sub_events', $intId);
-        $objVersions->initialize();
-
-        // Trigger the save_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['published']['save_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['fields']['published']['save_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $blnVisible = $obj->{$callback[1]}($blnVisible, $dc);
-                } elseif (\is_callable($callback)) {
-                    $blnVisible = $callback($blnVisible, $dc);
-                }
-            }
-        }
-
-        $time = time();
-
-        // Update the database
-        $db->prepare("UPDATE tl_calendar_sub_events SET tstamp=$time, published='".($blnVisible ? '1' : '')."' WHERE id=?")
-            ->execute($intId);
-
-        if ($dc) {
-            $dc->activeRecord->tstamp = $time;
-            $dc->activeRecord->published = ($blnVisible ? '1' : '');
-        }
-
-        // Trigger the onsubmit_callback
-        if (\is_array($GLOBALS['TL_DCA']['tl_calendar_sub_events']['config']['onsubmit_callback'])) {
-            foreach ($GLOBALS['TL_DCA']['tl_calendar_sub_events']['config']['onsubmit_callback'] as $callback) {
-                if (\is_array($callback)) {
-                    $obj = System::importStatic($callback[0]);
-                    $obj->{$callback[1]}($dc);
-                } elseif (\is_callable($callback)) {
-                    $callback($dc);
-                }
-            }
-        }
-
-        $objVersions->create();
-    }
 }

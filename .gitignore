@@ -6,3 +6,5 @@ Thumbs.db
 /component
 composer.lock
 composer.json~
+/.phpunit.cache
+/.phpunit.result.cache

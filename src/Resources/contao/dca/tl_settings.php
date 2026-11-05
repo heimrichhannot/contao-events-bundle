@@ -5,7 +5,7 @@ $dca = &$GLOBALS['TL_DCA']['tl_settings'];
 /**
  * Palettes
  */
-$dca['palettes']['default'] .= ';{events_bundle_legend},subEventMode,skipCalendarEventCoordinateRetrieval;';
+$dca['palettes']['default'] .= ';{events_bundle_legend},subEventMode,skipCalendarEventCoordinateRetrieval,utilsGoogleApiKey;';
 
 /**
  * Fields
@@ -29,6 +29,12 @@ $fields = [
         'inputType'               => 'checkbox',
         'eval'                    => ['tl_class' => 'w50'],
     ],
+];
+
+$fields['utilsGoogleApiKey'] = [
+    'label' => &$GLOBALS['TL_LANG']['tl_settings']['utilsGoogleApiKey'],
+    'inputType' => 'text',
+    'eval' => ['tl_class' => 'w50', 'hideInput' => true],
 ];
 
 $dca['fields'] += $fields;

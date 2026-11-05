@@ -9,24 +9,14 @@
 namespace HeimrichHannot\EventsBundle\DataContainer;
 
 use Contao\DataContainer;
-use HeimrichHannot\UtilsBundle\Dca\DcaUtil;
+use Contao\Controller;
 
 class CalendarContainer
 {
-    /**
-     * @var DcaUtil
-     */
-    protected $dcaUtil;
-
-    public function __construct(DcaUtil $dcaUtil)
-    {
-        $this->dcaUtil = $dcaUtil;
-    }
-
     public function getEventsPalettes(DataContainer $dc): array
     {
         $options = [];
-        $this->dcaUtil->loadDc('tl_calendar_events');
+        Controller::loadDataContainer('tl_calendar_events');
         $palettes = $GLOBALS['TL_DCA']['tl_calendar_events']['palettes'];
 
         if (!\is_array($palettes)) {

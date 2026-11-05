@@ -13,6 +13,37 @@ This bundle offers useful functionality concerning the entities `tl_calendar` an
 - adds some new fields (see below)
 - Calendar event coordinates
 
+## Requirements (branch `contao53`)
+
+- PHP 8.2 or newer
+- Contao 5.3 or newer within the 5.x series
+- Heimrich & Hannot Utils Bundle 3.13 or newer
+
+This branch no longer supports Contao 4 or Utils Bundle 2. Optional list, reader,
+head and multilingual extensions must themselves support Contao 5 and Utils 3.
+Their integration should be checked with the versions installed in your project.
+
+After updating, clear the Contao cache and run `vendor/bin/contao-console contao:migrate`.
+For automatic coordinates, configure the Google Maps API key in the Contao settings
+(the existing `utilsGoogleApiKey` setting is preserved), or disable coordinate retrieval.
+
+Visibility and featured operations now use Contao's native toggle fields. Access to
+sub-events and their content is checked through the parent event's calendar permissions.
+Custom integrations calling the removed legacy toggle/permission callbacks must use
+Contao's data container operations and security voters instead.
+
+### Development checks
+
+```bash
+composer update --no-plugins --no-scripts
+vendor/bin/phpunit
+php tests/smoke.php
+```
+
+The smoke test boots a separate Contao 5.3 kernel, loads the calendar and sub-event
+DCAs, checks callback methods and compiles the Twig templates. It does not connect
+to the project database or perform migrations.
+
 ## Installation
 
 Install via composer: `composer require heimrichhannot/contao-events-bundle` and update your database.

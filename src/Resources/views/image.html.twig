@@ -1,0 +1,13 @@
+<figure class="image_container{{ floatClass|default('') }}">
+    {% if href|default %}<a href="{{ href }}"{% if target|default %} target="_blank" rel="noopener"{% endif %}>{% endif %}
+    {% if picture.sources|default %}
+        <picture>
+        {% for source in picture.sources %}
+            <source srcset="{{ source.srcset }}"{% if source.sizes|default %} sizes="{{ source.sizes }}"{% endif %}{% if source.media|default %} media="{{ source.media }}"{% endif %}{% if source.type|default %} type="{{ source.type }}"{% endif %}>
+        {% endfor %}
+    {% endif %}
+    <img src="{{ picture.img.src }}" alt="{{ picture.alt|default('') }}"{% if picture.img.srcset|default %} srcset="{{ picture.img.srcset }}"{% endif %}{% if picture.img.sizes|default %} sizes="{{ picture.img.sizes }}"{% endif %}{% if picture.img.width|default %} width="{{ picture.img.width }}"{% endif %}{% if picture.img.height|default %} height="{{ picture.img.height }}"{% endif %}{% if picture.title|default %} title="{{ picture.title }}"{% endif %} loading="{{ loading|default('lazy') }}">
+    {% if picture.sources|default %}</picture>{% endif %}
+    {% if href|default %}</a>{% endif %}
+    {% if caption|default %}<figcaption class="caption">{{ caption }}</figcaption>{% endif %}
+</figure>

@@ -8,7 +8,7 @@
 
 namespace HeimrichHannot\EventsBundle\Model;
 
-class CalendarSubEventsModel extends \Model
+class CalendarSubEventsModel extends \Contao\Model
 {
     protected static $strTable = 'tl_calendar_sub_events';
 }

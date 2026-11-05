@@ -8,14 +8,14 @@
 
 $dca = &$GLOBALS['TL_DCA']['tl_calendar_events'];
 
-System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarEventsDcaForSubEvents();
+\Contao\System::getContainer()->get(\HeimrichHannot\EventsBundle\Manager\EventsManager::class)->initCalendarEventsDcaForSubEvents();
 
 /*
  * Callbacks
  */
 $dca['config']['onload_callback'][] = [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'modifyPalette'];
-$dca['config']['onsubmit_callback'][] = ['huh.utils.dca', 'setDateAdded'];
-$dca['config']['oncopy_callback'][] = ['huh.utils.dca', 'setDateAddedOnCopy'];
+$dca['config']['onsubmit_callback'][] = [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'setDateAdded'];
+$dca['config']['oncopy_callback'][] = [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'setDateAddedOnCopy'];
 
 /**
  * Fields.
@@ -76,7 +76,7 @@ $fields = [
         'inputType' => 'text',
         'exclude' => true,
         'eval' => ['tl_class' => 'w50'],
-        'save_callback' => [\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'onSaveCoordinates'],
+        'save_callback' => [[\HeimrichHannot\EventsBundle\DataContainer\CalendarEventsContainer::class, 'onSaveCoordinates']],
         'sql' => "varchar(64) NOT NULL default ''",
     ],
     'website' => [

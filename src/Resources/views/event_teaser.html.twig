@@ -25,7 +25,7 @@
         {% endif %}
 
         {% if images.singleSRC|default() %}
-            {{ include('@HeimrichHannotContaoUtils/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
+            {{ include('@HeimrichHannotContaoEvents/image.html.twig', images.singleSRC|merge({'href': detailsUrl})) }}
         {% endif %}
 
         {% if addBefore|default %}

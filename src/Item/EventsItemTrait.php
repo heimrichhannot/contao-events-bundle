@@ -12,13 +12,10 @@ use Contao\CommentsModel;
 use Contao\Config;
 use Contao\ContentModel;
 use Contao\Controller;
-use Contao\ModuleLoader;
 use Contao\StringUtil;
 use Contao\System;
 use HeimrichHannot\ListBundle\Manager\ListManagerInterface;
-use HeimrichHannot\RequestBundle\Component\HttpFoundation\Request;
-use HeimrichHannot\UtilsBundle\Content\ContentUtil;
-use HeimrichHannot\UtilsBundle\Model\ModelUtil;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
 trait EventsItemTrait
 {
@@ -56,7 +53,7 @@ trait EventsItemTrait
         }
 
         // External link
-        return sprintf('<a href="%s" title="%s"%s itemprop="url">%s</a>', $this->getExternalUrl(), \StringUtil::specialchars(sprintf($GLOBALS['TL_LANG']['MSC']['open'], $this->getExternalUrl())), ($this->target ? ' target="_blank"' : ''), $this->title);
+        return sprintf('<a href="%s" title="%s"%s itemprop="url">%s</a>', $this->getExternalUrl(), \Contao\StringUtil::specialchars(sprintf($GLOBALS['TL_LANG']['MSC']['open'], $this->getExternalUrl())), ($this->target ? ' target="_blank"' : ''), $this->title);
     }
 
     /**
@@ -76,7 +73,7 @@ trait EventsItemTrait
      */
     public function getCalendar(): ?array
     {
-        if (null === ($calendar = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_calendar', $this->pid))) {
+        if (null === ($calendar = System::getContainer()->get(Utils::class)->model()->findModelInstanceByPk('tl_calendar', $this->pid))) {
             return null;
         }
 
@@ -96,8 +93,8 @@ trait EventsItemTrait
         $url = $this->getDetailsUrl();
 
         // Add the current calendar parameter
-        if (System::getContainer()->get(Request::class)->query->has('month')) {
-            $url .= '?month='.System::getContainer()->get(Request::class)->query->get('month');
+        if (System::getContainer()->get('request_stack')->getCurrentRequest()?->query->has('month')) {
+            $url .= '?month='.System::getContainer()->get('request_stack')->getCurrentRequest()?->query->get('month');
         }
 
         return $url;
@@ -131,7 +128,7 @@ trait EventsItemTrait
         if ('mailto:' == substr($this->url, 0, 7)) {
             $url = StringUtil::encodeEmail($this->url);
         } else {
-            $url = ampersand($this->url);
+            $url = StringUtil::ampersand($this->url);
         }
 
         return $url ?? null;
@@ -144,8 +141,8 @@ trait EventsItemTrait
     {
         $url = '';
 
-        if (null !== ($target = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_page', $this->jumpTo))) {
-            $url = ampersand($target->getFrontendUrl());
+        if (null !== ($target = System::getContainer()->get(Utils::class)->model()->findModelInstanceByPk('tl_page', $this->jumpTo))) {
+            $url = StringUtil::ampersand($target->getFrontendUrl());
         }
 
         return $url ?? null;
@@ -158,11 +155,11 @@ trait EventsItemTrait
     {
         $url = '';
 
-        $modelUtil = System::getContainer()->get(ModelUtil::class);
+        $modelUtil = System::getContainer()->get(Utils::class)->model();
 
         if (null !== ($article = $modelUtil->findModelInstanceByPk('tl_article', $this->articleId, ['eager' => true])) &&
             null !== ($parentPage = $modelUtil->findModelInstanceByPk('tl_page', $article->pid))) {
-            $url = ampersand($parentPage->getFrontendUrl('/articles/'.($article->alias ?: $article->id)));
+            $url = StringUtil::ampersand($parentPage->getFrontendUrl('/articles/'.($article->alias ?: $article->id)));
         }
 
         return $url ?? null;
@@ -176,16 +173,16 @@ trait EventsItemTrait
         if (!$isCanonical && $this->getManager() instanceof ListManagerInterface && $this->getManager()->getListConfig()->addDetails) {
             $url = $this->_detailsUrl;
         } else {
-            $modelUtil = System::getContainer()->get(ModelUtil::class);
+            $modelUtil = System::getContainer()->get(Utils::class)->model();
 
             if (null === ($archive = $modelUtil->findModelInstanceByPk('tl_calendar', $this->pid))) {
                 return null;
             }
 
             if (null === ($page = $modelUtil->findModelInstanceByPk('tl_page', $archive->jumpTo))) {
-                $url = ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
+                $url = StringUtil::ampersand(System::getContainer()->get('request_stack')->getCurrentRequest()->getRequestUri(), true);
             } else {
-                $url = ampersand($page->getFrontendUrl((Config::get('useAutoItem') ? '/' : '/items/').($this->alias ?: $this->id)));
+                $url = StringUtil::ampersand($page->getFrontendUrl('/'.($this->alias ?: $this->id)));
             }
         }
 
@@ -197,7 +194,7 @@ trait EventsItemTrait
      */
     public function getAuthor(): ?string
     {
-        if (null !== ($user = System::getContainer()->get(ModelUtil::class)->findModelInstanceByPk('tl_user', $this->author))) {
+        if (null !== ($user = System::getContainer()->get(Utils::class)->model()->findModelInstanceByPk('tl_user', $this->author))) {
             return $GLOBALS['TL_LANG']['MSC']['by'].' '.$user->name;
         }
 
@@ -219,7 +216,7 @@ trait EventsItemTrait
      */
     public function getNumberOfComments(): ?int
     {
-        if ($this->noComments || !\in_array('comments', ModuleLoader::getActive(), true) || 'default' != $this->source) {
+        if ($this->noComments || !isset(System::getContainer()->getParameter('kernel.bundles')['ContaoCommentsBundle']) || 'default' != $this->source) {
             return null;
         }
 
@@ -263,11 +260,11 @@ trait EventsItemTrait
         $start = $this->startTime;
         $end = $this->endTime;
 
-        $date = \Date::parse($objPage->dateFormat, $start);
-        $span = \Calendar::calculateSpan($start, $end);
+        $date = \Contao\Date::parse($objPage->dateFormat, $start);
+        $span = \Contao\Calendar::calculateSpan($start, $end);
 
         if ($span > 0) {
-            $date = \Date::parse($objPage->dateFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->dateFormat, $end);
+            $date = \Contao\Date::parse($objPage->dateFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Contao\Date::parse($objPage->dateFormat, $end);
         }
 
         return $date;
@@ -287,7 +284,7 @@ trait EventsItemTrait
 
         $time = '';
 
-        $span = \Calendar::calculateSpan($start, $end);
+        $span = \Contao\Calendar::calculateSpan($start, $end);
 
         if ($span > 0) {
             return '';
@@ -295,9 +292,9 @@ trait EventsItemTrait
 
         if ($this->getRawValue('addTime')) {
             if ($start == $end) {
-                $time = \Date::parse($objPage->timeFormat, $start);
+                $time = \Contao\Date::parse($objPage->timeFormat, $start);
             } else {
-                $time = \Date::parse($objPage->timeFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Date::parse($objPage->timeFormat, $end);
+                $time = \Contao\Date::parse($objPage->timeFormat, $start).$GLOBALS['TL_LANG']['MSC']['cal_timeSeparator'].\Contao\Date::parse($objPage->timeFormat, $end);
             }
         }
 
@@ -318,14 +315,14 @@ trait EventsItemTrait
      */
     public function getEnclosures(): ?array
     {
-        if (true === $this->getRawValue('addEnclosure')) {
+        if (!$this->getRawValue('addEnclosure')) {
             return null;
         }
 
         $template = new \stdClass();
         Controller::addEnclosuresToTemplate($template, $this->getRaw());
 
-        return $template->enclosure;
+        return $template->enclosure ?? null;
     }
 
     /**
@@ -335,7 +332,15 @@ trait EventsItemTrait
      */
     public function getDetails(): ?string
     {
-        return System::getContainer()->get(ContentUtil::class)->getMultilingualElements($this->getRawValue('id'), $this->getDataContainer());
+        $elements = ContentModel::findPublishedByPidAndTable($this->getRawValue('id'), $this->getDataContainer());
+        $html = '';
+        if (null !== $elements) {
+            foreach ($elements as $element) {
+                $html .= Controller::getContentElement($element);
+            }
+        }
+
+        return $html;
     }
 
     /**
@@ -369,6 +374,6 @@ trait EventsItemTrait
      */
     public function getTeaser(): ?string
     {
-        return StringUtil::encodeEmail(StringUtil::toHtml5($this->teaser));
+        return StringUtil::encodeEmail((string) $this->teaser);
     }
 }

@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+These changes are maintained in the fork's `contao53` branch. The release version
+and release date are left to the upstream maintainers.
+
+### Changed
+
+- Require PHP 8.2+, Contao 5.3+ (5.x) and Heimrich & Hannot Utils Bundle 3.13+.
+- Replace removed Contao class aliases, insert-tag helpers and Utils Bundle 2 services with supported APIs.
+- Use Contao's native visibility and featured toggle operations.
+- Check access to sub-events and their content through security voters using the parent event's calendar permissions, including both parents when moving a sub-event.
+- Adapt the copied sub-event DCA to Contao 5.3, including content navigation and callbacks.
+- Retrieve coordinates through Symfony HttpClient while preserving the existing `utilsGoogleApiKey` setting and the option to disable retrieval.
+- Maintain creation timestamps through bundle-owned callbacks.
+- Render event content through Contao's content elements and use a bundle-owned image template instead of the removed Utils template.
+- Replace the obsolete Travis CI configuration with GitHub Actions and update PHPUnit to version 10.5.
+
+### Fixed
+
+- Query `tl_calendar_sub_events.pid` when loading sub-events in entity mode.
+- Resolve a sub-event's calendar through its parent event for SERP URLs and page titles, and restore the page context after rendering the title.
+- Register the coordinates save callback as a nested callback array.
+- Use the event start time and Contao's description field for reader metadata, correct the page-title fallback and guard optional metadata fields.
+- Correct enclosure handling and replace removed frontend URL and HTML helpers.
+
+### Added
+
+- Regression tests for sub-event queries, access checks, coordinate retrieval, service definitions and optional list configuration.
+- An isolated Contao 5.3 kernel smoke test covering DCA loading, callback resolution and Twig template compilation.
+- Upgrade requirements and validation instructions in the README.
+
+### Removed
+
+- Support for Contao 4, PHP versions below 8.2 and Utils Bundle 2.
+- Legacy Ajax toggle hooks and permission callbacks. Custom integrations using these callbacks must migrate to Contao's data container operations and security voters.
+
 ## [1.9.4] - 2024-11-12
 - Fixed: skip adding meta tags when head bundle is not installed
 - Fixed: do not use invalid insert tag in meta tags
