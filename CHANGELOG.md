@@ -21,6 +21,9 @@ and release date are left to the upstream maintainers.
 
 ### Fixed
 
+- Add missing English labels and help texts for event location and contact fields, the short title, custom event palettes, automatic coordinate retrieval and their legends; correct the parent-event and create-sub-event descriptions.
+- Add English and German labels for the sub-events backend module.
+
 - Query `tl_calendar_sub_events.pid` when loading sub-events in entity mode.
 - Resolve a sub-event's calendar through its parent event for SERP URLs and page titles, and restore the page context after rendering the title.
 - Register the coordinates save callback as a nested callback array.

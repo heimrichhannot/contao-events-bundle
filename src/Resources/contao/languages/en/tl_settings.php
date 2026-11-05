@@ -9,6 +9,8 @@ $lang['subEventMode'] = [];
 $lang['subEventMode'][0] = 'Mode for sub events';
 $lang['subEventMode'][1] = 'Choose here how sub events should be realized.';
 
+$lang['skipCalendarEventCoordinateRetrieval'] = ['Disable automatic coordinate retrieval', 'Select this option to prevent coordinates from being retrieved automatically using the Google Geocoding API. Automatic retrieval requires an API key.'];
+
 /**
  * Legends
  */
