@@ -1,3 +1,6 @@
+> [!WARNING]
+> This extension is no longer maintained.
+
 # Contao Events Bundle
 
 This bundle offers useful functionality concerning the entities `tl_calendar` and `tl_calendar_events` of the Contao CMS.
